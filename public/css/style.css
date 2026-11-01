@@ -69,10 +69,18 @@ body {
 .brand-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.brand-logo-img {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .brand-badge {
@@ -89,36 +97,105 @@ body {
   color: #fff;
   font-size: 18px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .toggle-sidebar-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.toggle-sidebar-btn:active {
+  transform: scale(0.95);
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
-.lang-selector {
-  color: #fff;
-  font-size: 12px;
+/* LANGUAGE DROPDOWN (Matches Rasm 1) */
+.lang-dropdown-wrapper {
+  position: relative;
+}
+
+.lang-selector-btn {
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 13px;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 7px 12px;
   border-radius: 4px;
+  border: none;
+  font-weight: 500;
+  transition: background 0.15s ease;
 }
 
-.lang-selector:hover {
-  background: rgba(255, 255, 255, 0.1);
+.lang-selector-btn:hover,
+.lang-selector-btn.active {
+  background-color: var(--hemis-blue-hover);
+}
+
+.lang-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  width: 135px;
+  display: none;
+  flex-direction: column;
+  z-index: 1200;
+  overflow: hidden;
+  animation: dropdownIn 0.15s ease-out;
+}
+
+.lang-dropdown-menu.show {
+  display: flex;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lang-option {
+  padding: 9px 16px;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.lang-option:hover {
+  background-color: #f1f5f9;
+  color: var(--hemis-blue);
+}
+
+.lang-option.selected {
+  font-weight: 600;
+  color: var(--hemis-blue);
+  background-color: #e8f4fc;
 }
 
 .notification-bell {
@@ -127,6 +204,12 @@ body {
   padding: 6px 10px;
   display: flex;
   align-items: center;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.notification-bell:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .notification-badge {
@@ -171,12 +254,6 @@ body {
   overflow: hidden;
 }
 
-.user-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .user-info {
   display: flex;
   flex-direction: column;
@@ -198,9 +275,10 @@ body {
   display: flex;
   margin-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));
+  position: relative;
 }
 
-/* SIDEBAR */
+/* SIDEBAR & COLLAPSIBLE MECHANISM */
 .hemis-sidebar {
   width: var(--sidebar-width);
   background-color: var(--hemis-dark);
@@ -212,8 +290,18 @@ body {
   bottom: 0;
   left: 0;
   z-index: 900;
-  transition: width 0.2s ease, transform 0.2s ease;
+  transition: transform 0.25s ease-in-out, width 0.25s ease-in-out;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* When Body has .sidebar-collapsed */
+body.sidebar-collapsed .hemis-sidebar {
+  transform: translateX(-100%);
+}
+
+body.sidebar-collapsed .hemis-main {
+  margin-left: 0 !important;
 }
 
 .sidebar-menu {
@@ -234,7 +322,7 @@ body {
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 9px 18px;
+  padding: 10px 18px;
   cursor: pointer;
   color: #eceff1;
   font-size: 13px;
@@ -257,7 +345,7 @@ body {
 }
 
 .menu-item i {
-  width: 16px;
+  width: 18px;
   text-align: center;
   font-size: 14px;
   color: #90a4ae;
@@ -301,7 +389,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: margin-left 0.2s ease;
+  transition: margin-left 0.25s ease-in-out;
+  min-width: 0;
 }
 
 /* BREADCRUMB */
@@ -335,7 +424,7 @@ body {
   border-radius: 4px;
   border: 1px solid var(--hemis-border);
   border-left: 5px solid var(--hemis-green);
-  padding: 12px 18px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -444,6 +533,7 @@ body {
   cursor: pointer;
   color: #94a3b8;
   font-size: 15px;
+  transition: color 0.15s ease;
 }
 
 .section-header-action:hover {
@@ -560,10 +650,12 @@ body {
   color: #334155;
   background-color: #fff;
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .form-select:focus, .form-input:focus {
   border-color: var(--hemis-blue);
+  box-shadow: 0 0 0 2px rgba(27, 117, 187, 0.15);
 }
 
 .btn {
@@ -789,6 +881,54 @@ body {
   gap: 8px;
 }
 
+/* HEMIS SEARCH AUTOCOMPLETE DROPDOWN */
+.hemis-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  max-height: 230px;
+  overflow-y: auto;
+  z-index: 2500;
+  margin-top: 4px;
+}
+
+.hemis-search-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.12s ease;
+}
+
+.hemis-search-item:last-child {
+  border-bottom: none;
+}
+
+.hemis-search-item:hover {
+  background-color: #e8f4fc;
+}
+
+.hemis-search-item .name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hemis-search-item .meta {
+  font-size: 11px;
+  color: #64748b;
+}
+
 /* TELEGRAM MESSAGE PREVIEW BOX */
 .telegram-preview {
   background-color: #ebf5fb;
@@ -850,11 +990,12 @@ body {
   .hemis-sidebar {
     transform: translateX(-100%);
   }
-  .hemis-sidebar.open {
+  body.sidebar-open .hemis-sidebar {
     transform: translateX(0);
+    box-shadow: 6px 0 20px rgba(0, 0, 0, 0.25);
   }
   .hemis-main {
-    margin-left: 0;
+    margin-left: 0 !important;
     padding: 12px;
   }
   .banner-right {

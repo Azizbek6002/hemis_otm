@@ -165,6 +165,17 @@ router.get('/teachers', (req, res) => {
   }
 });
 
+// 4.1 SEARCH TEACHERS FROM HEMIS (For fast autofill when adding)
+router.get('/hemis/search-teachers', async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    const results = await hemisService.searchTeachers(query);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. ADD / UPDATE TEACHER
 router.post('/teachers', (req, res) => {
   try {

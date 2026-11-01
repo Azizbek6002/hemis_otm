@@ -13,7 +13,8 @@ const state = {
     search: '',
     date: new Date().toISOString().split('T')[0]
   },
-  autoRefreshInterval: null
+  autoRefreshInterval: null,
+  searchDebounceTimer: null
 };
 
 // DOM Content Loaded
@@ -22,8 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
+  setupSidebarToggle();
+  setupLanguageDropdown();
   setupNavigation();
   setupEventListeners();
+  setupTeacherSearchAutofill();
   updateLiveClock();
   setInterval(updateLiveClock, 1000);
 
@@ -36,6 +40,192 @@ async function initApp() {
     }
   }, 20000);
 }
+
+// -------------------------------------------------------------
+// 1. SIDEBAR COLLAPSE TOGGLE (3 Horizontal Lines)
+// -------------------------------------------------------------
+function setupSidebarToggle() {
+  const toggleBtn = document.getElementById('toggleSidebarBtn');
+  if (!toggleBtn) return;
+
+  // Restore saved desktop collapse state
+  const isCollapsed = localStorage.getItem('hemis_sidebar_collapsed') === '1';
+  if (isCollapsed && window.innerWidth > 900) {
+    document.body.classList.add('sidebar-collapsed');
+  }
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (window.innerWidth <= 900) {
+      // Mobile toggle
+      document.body.classList.toggle('sidebar-open');
+    } else {
+      // Desktop toggle
+      document.body.classList.toggle('sidebar-collapsed');
+      const nowCollapsed = document.body.classList.contains('sidebar-collapsed');
+      localStorage.setItem('hemis_sidebar_collapsed', nowCollapsed ? '1' : '0');
+    }
+  });
+
+  // Close mobile sidebar on body click outside
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900 && document.body.classList.contains('sidebar-open')) {
+      const sidebar = document.getElementById('hemisSidebar');
+      if (sidebar && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+  });
+}
+
+// -------------------------------------------------------------
+// 2. LANGUAGE DROPDOWN (Matches Rasm 1)
+// -------------------------------------------------------------
+function setupLanguageDropdown() {
+  const wrapper = document.getElementById('langDropdownWrapper');
+  const trigger = document.getElementById('langDropdownTrigger');
+  const menu = document.getElementById('langDropdownMenu');
+  const currentLangText = document.getElementById('currentLangText');
+  if (!trigger || !menu) return;
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('show');
+    trigger.classList.toggle('active');
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    if (wrapper && !wrapper.contains(e.target)) {
+      menu.classList.remove('show');
+      trigger.classList.remove('active');
+    }
+  });
+
+  // Language option selection
+  const options = menu.querySelectorAll('.lang-option');
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const langCode = opt.getAttribute('data-lang');
+      const langName = opt.textContent.trim();
+
+      options.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+
+      currentLangText.textContent = langName;
+      menu.classList.remove('show');
+      trigger.classList.remove('active');
+
+      localStorage.setItem('hemis_lang', langCode);
+
+      if (langCode !== 'uz-latn') {
+        showToast(`Tanlandi: ${langName}. Hozircha tizim O'zbek tilida ishlaydi, boshqa tillar keyingi yangilanishda qo'shiladi.`, 'info');
+      } else {
+        showToast(`Til o'zgartirildi: ${langName}`, 'success');
+      }
+    });
+  });
+
+  // Restore saved language
+  const savedLang = localStorage.getItem('hemis_lang');
+  if (savedLang) {
+    const matching = menu.querySelector(`.lang-option[data-lang="${savedLang}"]`);
+    if (matching) {
+      options.forEach(o => o.classList.remove('selected'));
+      matching.classList.add('selected');
+      currentLangText.textContent = matching.textContent.trim();
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// 3. TEACHER SEARCH & AUTOFILL FROM HEMIS (User requirement)
+// -------------------------------------------------------------
+function setupTeacherSearchAutofill() {
+  const searchInput = document.getElementById('hemisTeacherSearchInput');
+  const resultsBox = document.getElementById('hemisSearchResults');
+  if (!searchInput || !resultsBox) return;
+
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    clearTimeout(state.searchDebounceTimer);
+
+    if (val.length < 2) {
+      resultsBox.innerHTML = '';
+      resultsBox.style.display = 'none';
+      return;
+    }
+
+    state.searchDebounceTimer = setTimeout(async () => {
+      try {
+        resultsBox.innerHTML = '<div style="padding: 10px; font-size: 12px; color: #64748b;"><i class="fa fa-spinner fa-spin"></i> HEMIS bazasidan qidirilmoqda...</div>';
+        resultsBox.style.display = 'block';
+
+        const res = await fetch(`/api/hemis/search-teachers?q=${encodeURIComponent(val)}`);
+        const teachers = await res.json();
+
+        if (!teachers || teachers.length === 0) {
+          resultsBox.innerHTML = `
+            <div style="padding: 12px; font-size: 12px; color: #64748b; text-align: center;">
+              HEMIS da "${escapeHtml(val)}" bo‘yicha o‘qituvchi topilmadi.<br>
+              <small>Quyidagi maydonlarni qo'lda kiritishingiz mumkin.</small>
+            </div>
+          `;
+          return;
+        }
+
+        resultsBox.innerHTML = teachers.map(t => `
+          <div class="hemis-search-item" onclick="selectHemisTeacher(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+            <div class="name">
+              <i class="fa fa-user-tie" style="color: var(--hemis-blue);"></i>
+              <span>${escapeHtml(t.full_name)}</span>
+              <span class="badge badge-secondary" style="font-size: 10px; margin-left: auto;">${escapeHtml(t.hemis_id)}</span>
+            </div>
+            <div class="meta">
+              ${escapeHtml(t.department || 'Kafedra')} &bull; ${escapeHtml(t.faculty || 'Fakultet')} &bull; ${escapeHtml(t.phone || 'Tel ko‘rsatilmagan')}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        resultsBox.innerHTML = `<div style="padding: 10px; font-size: 12px; color: #dc2626;">Qidiruvda xatolik: ${err.message}</div>`;
+      }
+    }, 250);
+  });
+
+  // Close search dropdown on click outside
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+      resultsBox.style.display = 'none';
+    }
+  });
+}
+
+// Function called when a teacher item is clicked from search
+window.selectHemisTeacher = function(t) {
+  document.getElementById('teacherHemisIdInput').value = t.hemis_id || '';
+  document.getElementById('teacherNameInput').value = t.full_name || '';
+  document.getElementById('teacherDeptInput').value = t.department || '';
+  document.getElementById('teacherPhoneInput').value = t.phone || '';
+
+  // Hide search dropdown
+  const resultsBox = document.getElementById('hemisSearchResults');
+  if (resultsBox) resultsBox.style.display = 'none';
+
+  // Clear search input
+  const searchInput = document.getElementById('hemisTeacherSearchInput');
+  if (searchInput) searchInput.value = t.full_name;
+
+  // Show success alert
+  const alertEl = document.getElementById('autofillSuccessAlert');
+  if (alertEl) {
+    alertEl.style.display = 'block';
+  }
+
+  // Focus Telegram username for fast completion
+  document.getElementById('teacherTelegramUsernameInput')?.focus();
+
+  showToast(`"${t.full_name}" ma'lumotlari HEMIS tizimidan avtomatik to'ldirildi!`, 'success');
+};
 
 function updateLiveClock() {
   const clockEl = document.getElementById('liveClockText');
@@ -53,15 +243,13 @@ function setupNavigation() {
     item.addEventListener('click', () => {
       const tabName = item.getAttribute('data-tab');
       switchTab(tabName);
+
+      // On mobile, close sidebar after clicking
+      if (window.innerWidth <= 900) {
+        document.body.classList.remove('sidebar-open');
+      }
     });
   });
-
-  const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
-  if (toggleSidebarBtn) {
-    toggleSidebarBtn.addEventListener('click', () => {
-      document.querySelector('.hemis-sidebar').classList.toggle('open');
-    });
-  }
 }
 
 function switchTab(tabName) {
@@ -200,7 +388,7 @@ async function loadLessons() {
     if (lessons.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; padding: 24px; color: #64748b;">
+          <td colspan="9" style="text-align: center; padding: 24px; color: #64748b;">
             Hech qanday dars topilmadi
           </td>
         </tr>
@@ -631,11 +819,21 @@ async function testHemisApi() {
   }
 }
 
-// Teacher modal
+// -------------------------------------------------------------
+// TEACHER MODAL & AUTOFILL
+// -------------------------------------------------------------
 function openTeacherModal(teacher = null) {
   const modal = document.getElementById('teacherModal');
   const form = document.getElementById('teacherForm');
   form.reset();
+
+  const searchBox = document.getElementById('hemisQuickSearchBox');
+  const searchInput = document.getElementById('hemisTeacherSearchInput');
+  const resultsBox = document.getElementById('hemisSearchResults');
+  const alertEl = document.getElementById('autofillSuccessAlert');
+
+  if (resultsBox) resultsBox.style.display = 'none';
+  if (alertEl) alertEl.style.display = 'none';
 
   if (teacher) {
     document.getElementById('teacherModalTitle').textContent = "O'qituvchini tahrirlash";
@@ -646,10 +844,20 @@ function openTeacherModal(teacher = null) {
     document.getElementById('teacherPhoneInput').value = teacher.phone || '';
     document.getElementById('teacherChatIdInput').value = teacher.telegram_chat_id || '';
     document.getElementById('teacherTelegramUsernameInput').value = teacher.telegram_username || '';
+    
+    // In edit mode, hide quick search box
+    if (searchBox) searchBox.style.display = 'none';
   } else {
-    document.getElementById('teacherModalTitle').textContent = "Yangi o'qituvchi qo'shish";
+    document.getElementById('teacherModalTitle').textContent = "Yangi o'qituvchi qo'shish (HEMIS dan)";
     document.getElementById('teacherIdInput').value = '';
-    document.getElementById('teacherHemisIdInput').value = 'T-' + Math.floor(10000 + Math.random() * 90000);
+    document.getElementById('teacherHemisIdInput').value = '';
+    
+    // In add mode, show quick search box and focus it!
+    if (searchBox) searchBox.style.display = 'block';
+    if (searchInput) {
+      searchInput.value = '';
+      setTimeout(() => searchInput.focus(), 150);
+    }
   }
 
   modal.style.display = 'flex';
@@ -684,7 +892,7 @@ async function saveTeacher(e) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast("O'qituvchi ma'lumotlari saqlandi!", 'success');
+      showToast("O'qituvchi ma'lumotlari muvaffaqiyatli saqlandi!", 'success');
       closeTeacherModal();
       await loadTeachers();
     } else {

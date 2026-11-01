@@ -1,5 +1,21 @@
 const { db } = require('../database/db');
 
+// University teachers mock catalog for quick autofill when live API is not yet loaded
+const MOCK_HEMIS_TEACHERS_CATALOG = [
+  { hemis_id: 'T-10291', full_name: 'Abdunazarov Abdurashid Saidorifovich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998901234567' },
+  { hemis_id: 'T-10292', full_name: 'Karimov Bobur Mansurovich', department: 'Axborot xavfsizligi', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998912345678' },
+  { hemis_id: 'T-10293', full_name: 'Rahimova Nargiza Omonovna', department: 'Sun’iy intellekt', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998933456789' },
+  { hemis_id: 'T-10294', full_name: 'Saidov Dilshod Rustamovich', department: 'Kompyuter tizimlari', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998944567890' },
+  { hemis_id: 'T-10295', full_name: 'Toshmatov Jamshid Ergashovich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998975678901' },
+  { hemis_id: 'T-10296', full_name: 'Xoliqova Feruza Baxtiyorovna', department: 'Ijtimoiy gumanitar fanlar', faculty: 'Gumanitar fakulteti', phone: '+998996789012' },
+  { hemis_id: 'T-10297', full_name: 'Aliyev Jasur Mirzayevich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998905551122' },
+  { hemis_id: 'T-10298', full_name: 'Normatov Sherzod Otabekovich', department: 'Axborot xavfsizligi', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998916662233' },
+  { hemis_id: 'T-10299', full_name: 'Yusupova Malika Ikromovna', department: 'Sun’iy intellekt', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998937773344' },
+  { hemis_id: 'T-10300', full_name: 'Mirzayev Farhod Qodirovich', department: 'Kompyuter tizimlari', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998948884455' },
+  { hemis_id: 'T-10301', full_name: 'Qosimova Shahnoza Anvarovna', department: 'Xorijiy tillar', faculty: 'Gumanitar fakulteti', phone: '+998999995566' },
+  { hemis_id: 'T-10302', full_name: 'Beknazarov Otabek Shuxratovich', department: 'Oliy matematika', faculty: 'Tabiiy fanlar fakulteti', phone: '+998901117788' }
+];
+
 class HemisService {
   getSetting(key) {
     const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
@@ -54,10 +70,56 @@ class HemisService {
     }
   }
 
+  // Search teachers by name from HEMIS API or Mock Catalog
+  async searchTeachers(query) {
+    const term = (query || '').trim().toLowerCase();
+    if (!term) return [];
+
+    const isLive = !this.isMockMode();
+    const apiUrl = this.getSetting('hemis_api_url');
+    const apiToken = this.getSetting('hemis_api_token');
+
+    if (isLive && apiUrl && apiToken) {
+      try {
+        const cleanUrl = apiUrl.replace(/\/+$/, '');
+        const response = await fetch(`${cleanUrl}/data/teacher-list?search=${encodeURIComponent(term)}&limit=15`, {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Accept': 'application/json'
+          },
+          signal: AbortSignal.timeout(6000)
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          // Map standard HEMIS teacher items
+          const items = Array.isArray(json.data?.items) ? json.data.items : (Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []));
+          return items.map(item => ({
+            hemis_id: item.employee_id_number || item.code || `T-${item.id}`,
+            full_name: item.short_name || item.full_name || `${item.second_name || ''} ${item.first_name || ''} ${item.third_name || ''}`.trim(),
+            department: item.department?.name || item.department_name || 'Kafedra',
+            faculty: item.faculty?.name || item.faculty_name || 'Fakultet',
+            phone: item.phone || ''
+          }));
+        }
+      } catch (err) {
+        console.warn('HEMIS API search error, falling back to catalog:', err.message);
+      }
+    }
+
+    // Filter from Mock Catalog + Local Database
+    const matched = MOCK_HEMIS_TEACHERS_CATALOG.filter(t => 
+      t.full_name.toLowerCase().includes(term) ||
+      t.department.toLowerCase().includes(term) ||
+      t.hemis_id.toLowerCase().includes(term)
+    );
+
+    return matched;
+  }
+
   // Sync today's schedule from HEMIS
   async syncSchedule() {
     if (this.isMockMode()) {
-      // In mock mode, ensure today's schedule exists in DB
       return {
         success: true,
         mode: 'MOCK',
@@ -73,7 +135,6 @@ class HemisService {
       throw new Error("HEMIS API manzili yoki token sozlanmagan");
     }
 
-    // Call real HEMIS endpoints
     const today = new Date().toISOString().split('T')[0];
     const cleanUrl = apiUrl.replace(/\/+$/, '');
     
@@ -96,8 +157,6 @@ class HemisService {
     };
   }
 
-  // Helper for admin dashboard to test real-world scenarios:
-  // e.g. "O'qituvchi davomatni to'ldirdi" -> triggers resolution check!
   setLessonAttendance(lessonId, status, markedCount = null) {
     const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(lessonId);
     if (!lesson) {

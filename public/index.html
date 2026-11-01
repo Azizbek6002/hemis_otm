@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HEMIS | O'qituvchilar Davomat Nazorati (Super Admin)</title>
+  <title>HEMIS | O'qituvchilar Davomat Nazorati</title>
+  
+  <!-- HEMIS Official 3-Cube Favicon (from Rasm 3) -->
+  <link rel="icon" type="image/svg+xml" href="/assets/hemis-favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -12,27 +18,42 @@
   <!-- TOP HEADER (HEMIS Style) -->
   <header class="hemis-header">
     <div class="header-left">
-      <button class="toggle-sidebar-btn" id="toggleSidebarBtn" title="Menyuni ochish/yopish">
+      <!-- 3 Horizontal Lines (Hamburger Menu) -->
+      <button class="toggle-sidebar-btn" id="toggleSidebarBtn" title="Menyuni ochish / yopish" type="button">
         <i class="fa fa-bars"></i>
       </button>
+
       <div class="brand-title">
-        <i class="fa fa-graduation-cap"></i>
+        <!-- HEMIS 3-Cube Logo (From Rasm 3) -->
+        <img src="/assets/hemis-favicon.svg" alt="HEMIS Logo" class="brand-logo-img">
         <span>HEMIS Nazorat</span>
         <span class="brand-badge">Super Admin</span>
       </div>
     </div>
 
     <div class="header-right">
-      <div class="lang-selector">
-        <i class="fa fa-globe"></i>
-        <span>O'zbekcha</span>
+      <!-- Language Dropdown (Exact match to Rasm 1) -->
+      <div class="lang-dropdown-wrapper" id="langDropdownWrapper">
+        <button class="lang-selector-btn" id="langDropdownTrigger" type="button">
+          <span id="currentLangText">O‘zbekcha</span>
+          <i class="fa fa-chevron-down" style="font-size: 10px;"></i>
+        </button>
+
+        <div class="lang-dropdown-menu" id="langDropdownMenu">
+          <div class="lang-option selected" data-lang="uz-latn">O‘zbekcha</div>
+          <div class="lang-option" data-lang="uz-cyrl">Ўзбекча</div>
+          <div class="lang-option" data-lang="ru">Русский</div>
+          <div class="lang-option" data-lang="en">English</div>
+        </div>
       </div>
 
+      <!-- Notification Bell -->
       <div class="notification-bell" onclick="switchTab('monitoring')" title="Ogohlantirish kutilayotgan o'qituvchilar">
         <i class="fa fa-bell" style="font-size: 16px;"></i>
         <span class="notification-badge" id="headerAlertBadge">0</span>
       </div>
 
+      <!-- Super Admin User Profile -->
       <div class="user-profile">
         <div class="user-avatar">
           <i class="fa fa-user-shield"></i>
@@ -49,7 +70,7 @@
   <div class="app-container">
 
     <!-- SIDEBAR (HEMIS Dark Slate Style) -->
-    <aside class="hemis-sidebar">
+    <aside class="hemis-sidebar" id="hemisSidebar">
       <ul class="sidebar-menu">
         <li class="menu-category">Asosiy menyu</li>
         <li class="menu-item active" data-tab="monitoring">
@@ -405,7 +426,7 @@
                   <input type="checkbox" id="mockModeCheckbox">
                   <div>
                     <strong>Lokal / Simulyatsiya rejimi</strong>
-                    <div class="settings-hint">Yoqilgan bo'lsa, haqiqiy HEMIS API bolmagan paytda ham tizim to'liq ishlaydi va o'qituvchilarga xabarlar simulyatsiya qilinadi.</div>
+                    <div class="settings-hint">Yoqilgan bo'lsa, haqiqiy HEMIS API bo'lmagan paytda ham tizim to'liq ishlaydi va o'qituvchilarga xabarlar simulyatsiya qilinadi.</div>
                   </div>
                 </label>
               </div>
@@ -504,7 +525,7 @@
     </main>
   </div>
 
-  <!-- MODAL: ADD / EDIT TEACHER -->
+  <!-- MODAL: ADD / EDIT TEACHER (With HEMIS Quick Search & Autofill) -->
   <div class="modal-overlay" id="teacherModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -515,40 +536,70 @@
         <div class="modal-body">
           <input type="hidden" id="teacherIdInput">
 
-          <div class="settings-group">
-            <label class="settings-label">HEMIS ID:</label>
-            <input type="text" class="form-input" id="teacherHemisIdInput" style="width: 100%;" required>
+          <!-- HEMIS QUICK SEARCH & AUTOFILL (User requested) -->
+          <div class="settings-group" id="hemisQuickSearchBox" style="background: #f0f7ff; border: 1px solid #bae6fd; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px;">
+            <label class="settings-label" style="color: #0369a1; display: flex; align-items: center; gap: 6px;">
+              <i class="fa fa-search"></i>
+              <span>O'qituvchi F.I.SH (HEMIS bazasidan tezkor qidirish):</span>
+            </label>
+            <div style="position: relative;">
+              <input type="text" class="form-input" id="hemisTeacherSearchInput" placeholder="Masalan: Abdunazarov, Karimov, Aliyev, Toshmatov..." autocomplete="off" style="width: 100%; font-size: 13px;">
+              <div id="hemisSearchResults" class="hemis-search-dropdown" style="display: none;"></div>
+            </div>
+            <div class="settings-hint" style="color: #0284c7; margin-top: 6px;">
+              <i class="fa fa-lightbulb"></i> Ism yoki familiyani kiritishni boshlang — HEMIS ID, Kafedra, Fakultet va Telefon raqami avtomatik to'ldiriladi!
+            </div>
+          </div>
+
+          <div id="autofillSuccessAlert" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 8px 12px; border-radius: 4px; margin-bottom: 14px; font-size: 12px;">
+            <i class="fa fa-check-circle"></i> HEMIS tizimidan ma'lumotlar avtomatik to'ldirildi! Faqat o'qituvchining Telegram manzilini kiriting.
           </div>
 
           <div class="settings-group">
-            <label class="settings-label">F.I.SH (To'liq ism-familiya):</label>
-            <input type="text" class="form-input" id="teacherNameInput" style="width: 100%;" required>
+            <label class="settings-label">HEMIS ID (O'qituvchi kodi):</label>
+            <input type="text" class="form-input" id="teacherHemisIdInput" style="width: 100%;" required placeholder="Masalan: T-10291">
           </div>
 
           <div class="settings-group">
-            <label class="settings-label">Kafedra:</label>
-            <input type="text" class="form-input" id="teacherDeptInput" style="width: 100%;" value="Dasturiy injiniring">
+            <label class="settings-label">F.I.SH (To'liq ism-sharif):</label>
+            <input type="text" class="form-input" id="teacherNameInput" style="width: 100%;" required placeholder="Masalan: Abdunazarov A. S.">
           </div>
 
-          <div class="settings-group">
-            <label class="settings-label">Telefon raqami:</label>
-            <input type="text" class="form-input" id="teacherPhoneInput" style="width: 100%;" placeholder="+998901234567">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="settings-group">
+              <label class="settings-label">Kafedra:</label>
+              <input type="text" class="form-input" id="teacherDeptInput" style="width: 100%;" value="Dasturiy injiniring">
+            </div>
+
+            <div class="settings-group">
+              <label class="settings-label">Telefon raqami:</label>
+              <input type="text" class="form-input" id="teacherPhoneInput" style="width: 100%;" placeholder="+998901234567">
+            </div>
           </div>
 
-          <div class="settings-group">
-            <label class="settings-label">Telegram Username (@username):</label>
-            <input type="text" class="form-input" id="teacherTelegramUsernameInput" style="width: 100%;" placeholder="@username">
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 16px 0;">
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">
+            <div style="font-weight: 600; font-size: 12px; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fab fa-telegram" style="color: #0284c7; font-size: 16px;"></i> Telegram Bog'lanish Ma'lumotlari:
+            </div>
+            
+            <div class="settings-group" style="margin-bottom: 10px;">
+              <label class="settings-label">Telegram Username (@username):</label>
+              <input type="text" class="form-input" id="teacherTelegramUsernameInput" style="width: 100%;" placeholder="@username">
+            </div>
+
+            <div class="settings-group" style="margin-bottom: 0;">
+              <label class="settings-label">Telegram Chat ID (ID raqami):</label>
+              <input type="text" class="form-input" id="teacherChatIdInput" style="width: 100%;" placeholder="Masalan: 71928374">
+              <div class="settings-hint">O'qituvchi botga <code>/start</code> bosganda uning chat ID si olinadi yoki qo'lda kiritiladi</div>
+            </div>
           </div>
 
-          <div class="settings-group">
-            <label class="settings-label">Telegram Chat ID:</label>
-            <input type="text" class="form-input" id="teacherChatIdInput" style="width: 100%;" placeholder="Masalan: 12345678">
-            <div class="settings-hint">O'qituvchi botga /start bosganda yoki bot orqali avtomatik olinadigan Telegram ID si</div>
-          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" onclick="closeTeacherModal()">Bekor qilish</button>
-          <button type="submit" class="btn btn-primary">Saqlash</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitTeacher">Saqlash</button>
         </div>
       </form>
     </div>
