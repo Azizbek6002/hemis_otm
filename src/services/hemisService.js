@@ -92,7 +92,6 @@ class HemisService {
 
         if (response.ok) {
           const json = await response.json();
-          // Map standard HEMIS teacher items
           const items = Array.isArray(json.data?.items) ? json.data.items : (Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []));
           return items.map(item => ({
             hemis_id: item.employee_id_number || item.code || `T-${item.id}`,
@@ -157,27 +156,40 @@ class HemisService {
     };
   }
 
-  setLessonAttendance(lessonId, status, markedCount = null) {
+  // LOGIK TO'G'RILANDI: Davomat holati va belgilangan talabalar soni hisobi
+  setLessonAttendance(lessonId, requestedStatus, markedCount = null) {
     const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(lessonId);
     if (!lesson) {
       throw new Error(`Dars topilmadi: ${lessonId}`);
     }
 
+    let finalStatus = requestedStatus;
     let marked = markedCount;
+
     if (marked === null) {
-      if (status === 'COMPLETED') marked = lesson.total_students;
-      else if (status === 'NOT_TAKEN') marked = 0;
+      if (requestedStatus === 'COMPLETED') marked = lesson.total_students;
+      else if (requestedStatus === 'NOT_TAKEN') marked = 0;
       else marked = Math.floor(lesson.total_students / 2);
+    } else {
+      // Clamp marked between 0 and total_students
+      marked = Math.max(0, Math.min(Number(marked), lesson.total_students));
+      if (marked >= lesson.total_students) {
+        finalStatus = 'COMPLETED';
+      } else if (marked === 0) {
+        finalStatus = 'NOT_TAKEN';
+      } else {
+        finalStatus = 'PARTIAL';
+      }
     }
 
     db.prepare(`
       UPDATE lessons 
       SET attendance_status = ?, marked_students = ?, updated_at = datetime('now', 'localtime')
       WHERE id = ?
-    `).run(status, marked, lessonId);
+    `).run(finalStatus, marked, lessonId);
 
-    // If marked as COMPLETED, auto-resolve any pending notifications for this lesson
-    if (status === 'COMPLETED') {
+    // Agar COMPLETED bo'lsa -> ogohlantirishlarni resolved = 1 qilamiz
+    if (finalStatus === 'COMPLETED') {
       db.prepare(`
         UPDATE notifications 
         SET resolved = 1, resolved_at = datetime('now', 'localtime')
@@ -186,19 +198,26 @@ class HemisService {
 
       db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
         'ATTENDANCE_COMPLETED',
-        `Dars #${lessonId} davomati to'liq yakunlandi (${marked}/${lesson.total_students}). Barcha faol ogohlantirishlar yopildi.`
+        `Dars #${lessonId} davomati to'liq yakunlandi (${marked}/${lesson.total_students}). Faol ogohlantirishlar yopildi.`
       );
     } else {
+      // LOGIK TO'G'RILANDI: Agar davomat qaytadan NOT_TAKEN yoki PARTIAL qilinsa, ogohlantirish yana kutilmoqda (resolved = 0) bo'lishi kerak!
+      db.prepare(`
+        UPDATE notifications 
+        SET resolved = 0, resolved_at = NULL
+        WHERE lesson_id = ?
+      `).run(lessonId);
+
       db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
         'ATTENDANCE_CHANGED',
-        `Dars #${lessonId} davomati o'zgartirildi: ${status} (${marked}/${lesson.total_students}).`
+        `Dars #${lessonId} davomati bekor qilindi yoki o'zgartirildi: ${finalStatus} (${marked}/${lesson.total_students}).`
       );
     }
 
     return {
       success: true,
       lessonId,
-      status,
+      status: finalStatus,
       marked,
       total: lesson.total_students
     };

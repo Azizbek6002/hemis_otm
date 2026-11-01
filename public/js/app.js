@@ -526,9 +526,15 @@ async function loadLessons() {
 
       let notifBadge = '';
       if (l.notification_status) {
-        const time = l.notified_at ? l.notified_at.split(' ')[1]?.substring(0, 5) : '';
-        const countTxt = l.reminder_count > 1 ? ` (${l.reminder_count}-bor)` : '';
-        notifBadge = `<span class="badge badge-info" title="Xabar yuborilgan"><i class="fa fa-paper-plane"></i> Yuborildi ${time}${countTxt}</span>`;
+        if (l.notification_status === 'NO_CHAT_ID') {
+          notifBadge = `<span class="badge badge-warning" title="O'qituvchining Telegram Chat ID si kiritilmagan"><i class="fa fa-exclamation-triangle"></i> Telegram ulanmagan</span>`;
+        } else if (l.notification_status === 'FAILED') {
+          notifBadge = `<span class="badge badge-danger" title="Xabarni yetkazishda xatolik yuz berdi"><i class="fa fa-times-circle"></i> Yetkazilmadi</span>`;
+        } else {
+          const time = l.notified_at ? l.notified_at.split(' ')[1]?.substring(0, 5) : '';
+          const countTxt = l.reminder_count > 1 ? ` (${l.reminder_count}-bor)` : '';
+          notifBadge = `<span class="badge badge-info" title="Xabar yuborilgan"><i class="fa fa-paper-plane"></i> Yuborildi ${time}${countTxt}</span>`;
+        }
       } else {
         notifBadge = `<span class="badge badge-secondary"><i class="fa fa-clock"></i> Kutilmoqda</span>`;
       }

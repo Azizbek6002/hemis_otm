@@ -5,7 +5,7 @@ const telegramService = require('../services/telegramService');
 const hemisService = require('../services/hemisService');
 const schedulerService = require('../services/schedulerService');
 
-// 1. STATS OVERVIEW
+// 1. STATS OVERVIEW (LOGIK TO'G'RILANDI)
 router.get('/stats', (req, res) => {
   try {
     const today = req.query.date || new Date().toISOString().split('T')[0];
@@ -16,23 +16,25 @@ router.get('/stats', (req, res) => {
     const partialLessons = db.prepare("SELECT COUNT(*) as c FROM lessons WHERE date = ? AND attendance_status = 'PARTIAL'").get(today)?.c || 0;
     const totalTeachers = db.prepare('SELECT COUNT(*) as c FROM teachers WHERE is_active = 1').get()?.c || 0;
 
-    // Notifications stats
+    // Notifications stats (Aniq darslar kesimida)
     const totalNotified = db.prepare(`
-      SELECT COUNT(DISTINCT l.teacher_id) as c 
+      SELECT COUNT(DISTINCT l.id) as c 
       FROM notifications n
       JOIN lessons l ON n.lesson_id = l.id
       WHERE l.date = ?
     `).get(today)?.c || 0;
 
+    // Ogohlantirishdan so'ng davomati haqiqatan COMPLETED bo'lgan darslar
     const resolvedAfterWarning = db.prepare(`
-      SELECT COUNT(DISTINCT l.teacher_id) as c 
+      SELECT COUNT(DISTINCT l.id) as c 
       FROM notifications n
       JOIN lessons l ON n.lesson_id = l.id
-      WHERE l.date = ? AND n.resolved = 1
+      WHERE l.date = ? AND n.resolved = 1 AND l.attendance_status = 'COMPLETED'
     `).get(today)?.c || 0;
 
+    // Ogohlantirilgan, lekin hali ham davomati qilinmagan darslar
     const stillPending = db.prepare(`
-      SELECT COUNT(DISTINCT l.teacher_id) as c 
+      SELECT COUNT(DISTINCT l.id) as c 
       FROM notifications n
       JOIN lessons l ON n.lesson_id = l.id
       WHERE l.date = ? AND n.resolved = 0 AND l.attendance_status != 'COMPLETED'
@@ -58,7 +60,7 @@ router.get('/stats', (req, res) => {
   }
 });
 
-// 2. LESSONS LIST
+// 2. LESSONS LIST (LOGIK FILTERLAR TO'G'RILANDI)
 router.get('/lessons', (req, res) => {
   try {
     const today = req.query.date || new Date().toISOString().split('T')[0];
@@ -93,9 +95,9 @@ router.get('/lessons', (req, res) => {
       if (status === 'INCOMPLETE') {
         query += " AND l.attendance_status != 'COMPLETED'";
       } else if (status === 'RESOLVED') {
-        query += " AND n.resolved = 1";
+        query += " AND n.resolved = 1 AND l.attendance_status = 'COMPLETED'";
       } else if (status === 'PENDING_WARNING') {
-        query += " AND n.resolved = 0 AND n.id IS NOT NULL";
+        query += " AND n.resolved = 0 AND n.id IS NOT NULL AND l.attendance_status != 'COMPLETED'";
       } else {
         query += " AND l.attendance_status = ?";
         params.push(status);
@@ -156,6 +158,7 @@ router.get('/teachers', (req, res) => {
         (SELECT COUNT(*) FROM lessons l WHERE l.teacher_id = t.id AND l.date = date('now', 'localtime')) as today_lessons_count,
         (SELECT COUNT(*) FROM notifications n WHERE n.teacher_id = t.id) as total_notifications_count
       FROM teachers t
+      WHERE t.is_active = 1
       ORDER BY t.full_name ASC
     `).all();
 
@@ -165,7 +168,7 @@ router.get('/teachers', (req, res) => {
   }
 });
 
-// 4.1 SEARCH TEACHERS FROM HEMIS (For fast autofill when adding)
+// 4.1 SEARCH TEACHERS FROM HEMIS (For fast autofill)
 router.get('/hemis/search-teachers', async (req, res) => {
   try {
     const query = req.query.q || '';
@@ -176,7 +179,7 @@ router.get('/hemis/search-teachers', async (req, res) => {
   }
 });
 
-// 5. ADD / UPDATE TEACHER
+// 5. ADD / UPDATE TEACHER (LOGIK XATO 5: UNIQUE constraint hal qilindi)
 router.post('/teachers', (req, res) => {
   try {
     const { id, hemis_id, full_name, department, faculty, phone, telegram_chat_id, telegram_username } = req.body;
@@ -186,28 +189,45 @@ router.post('/teachers', (req, res) => {
     }
 
     if (id) {
-      // Update
+      // Update by primary key
       db.prepare(`
         UPDATE teachers 
-        SET hemis_id = ?, full_name = ?, department = ?, faculty = ?, phone = ?, telegram_chat_id = ?, telegram_username = ?
+        SET hemis_id = ?, full_name = ?, department = ?, faculty = ?, phone = ?, telegram_chat_id = ?, telegram_username = ?, is_active = 1
         WHERE id = ?
-      `).run(hemis_id, full_name, department || '', faculty || '', phone || '', telegram_chat_id || '', telegram_username || '', id);
+      `).run(hemis_id.trim(), full_name.trim(), department || '', faculty || '', phone || '', telegram_chat_id || '', telegram_username || '', id);
 
       db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
         'TEACHER_UPDATE',
         `O'qituvchi ${full_name} ma'lumotlari yangilandi.`
       );
     } else {
-      // Insert
-      db.prepare(`
-        INSERT INTO teachers (hemis_id, full_name, department, faculty, phone, telegram_chat_id, telegram_username)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(hemis_id, full_name, department || '', faculty || '', phone || '', telegram_chat_id || '', telegram_username || '');
+      // Insert or Update on HEMIS ID conflict
+      const existing = db.prepare('SELECT id FROM teachers WHERE hemis_id = ?').get(hemis_id.trim());
+      if (existing) {
+        db.prepare(`
+          UPDATE teachers 
+          SET full_name = ?, department = ?, faculty = ?, phone = ?, 
+              telegram_chat_id = coalesce(nullif(?, ''), telegram_chat_id),
+              telegram_username = coalesce(nullif(?, ''), telegram_username),
+              is_active = 1
+          WHERE id = ?
+        `).run(full_name.trim(), department || '', faculty || '', phone || '', telegram_chat_id || '', telegram_username || '', existing.id);
 
-      db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
-        'TEACHER_CREATE',
-        `Yangi o'qituvchi qo'shildi: ${full_name} (${hemis_id})`
-      );
+        db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+          'TEACHER_UPDATE',
+          `Mavjud o'qituvchi ${full_name} (${hemis_id}) ma'lumotlari yangilandi.`
+        );
+      } else {
+        db.prepare(`
+          INSERT INTO teachers (hemis_id, full_name, department, faculty, phone, telegram_chat_id, telegram_username, is_active)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        `).run(hemis_id.trim(), full_name.trim(), department || '', faculty || '', phone || '', telegram_chat_id || '', telegram_username || '');
+
+        db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+          'TEACHER_CREATE',
+          `Yangi o'qituvchi qo'shildi: ${full_name} (${hemis_id})`
+        );
+      }
     }
 
     res.json({ success: true });
@@ -216,21 +236,33 @@ router.post('/teachers', (req, res) => {
   }
 });
 
-// 6. DELETE TEACHER
+// 6. DELETE TEACHER (LOGIK XATO 6: Foreign key xatosi hal qilindi - Soft delete)
 router.delete('/teachers/:id', (req, res) => {
   try {
     const teacherId = req.params.id;
+    const hasLessons = db.prepare('SELECT COUNT(*) as c FROM lessons WHERE teacher_id = ?').get(teacherId)?.c || 0;
+    const hasNotifs = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE teacher_id = ?').get(teacherId)?.c || 0;
+
+    if (hasLessons > 0 || hasNotifs > 0) {
+      db.prepare('UPDATE teachers SET is_active = 0 WHERE id = ?').run(teacherId);
+      db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+        'TEACHER_DEACTIVATED',
+        `O'qituvchi #${teacherId} nofaol qilindi (Darslar va xabarnomalar tarixi saqlandi).`
+      );
+      return res.json({ success: true, message: "O'qituvchi nofaol qilindi (tarix saqlab qolindi)." });
+    }
+
     db.prepare('DELETE FROM teachers WHERE id = ?').run(teacherId);
-    res.json({ success: true });
+    res.json({ success: true, message: "O'qituvchi butunlay o'chirildi." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 7. RUN MANUAL CHECK & AUTO NOTIFY NOW
+// 7. RUN MANUAL CHECK & AUTO NOTIFY NOW (Manual = true)
 router.post('/check-now', async (req, res) => {
   try {
-    const summary = await telegramService.checkAndAutoNotify();
+    const summary = await telegramService.checkAndAutoNotify(true);
     res.json({ success: true, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -317,7 +349,7 @@ router.post('/settings', (req, res) => {
   }
 });
 
-// 12. TEST TELEGRAM BOT CONNECTION & SEND TEST MESSAGE
+// 12. TEST TELEGRAM BOT CONNECTION
 router.post('/test-telegram', async (req, res) => {
   try {
     const { token, chatId, message } = req.body;
@@ -352,7 +384,18 @@ router.post('/test-hemis', async (req, res) => {
   }
 });
 
-// 14. AUDIT LOGS
+// 14. TELEGRAM DEEP LINK CONNECT
+router.post('/telegram/link-teacher', (req, res) => {
+  try {
+    const { hemisId, chatId, username } = req.body;
+    const result = telegramService.linkTeacherChat(hemisId, chatId, username);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 15. AUDIT LOGS
 router.get('/audit-logs', (req, res) => {
   try {
     const logs = db.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 50').all();

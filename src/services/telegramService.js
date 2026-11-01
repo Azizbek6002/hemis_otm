@@ -10,6 +10,40 @@ class TelegramService {
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
   }
 
+  // Dars vaqtini tahlil qilish (Dars boshlanganmi, tugaganmi?)
+  getLessonTiming(pairTime) {
+    if (!pairTime || !pairTime.includes('-')) {
+      return { started: true, ended: true, label: 'Vaqti noma’lum' };
+    }
+
+    try {
+      const parts = pairTime.split('-').map(s => s.trim());
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const [startH, startM] = parts[0].split(':').map(Number);
+      const [endH, endM] = parts[1].split(':').map(Number);
+
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      const started = currentMinutes >= startMinutes;
+      const ended = currentMinutes >= endMinutes;
+
+      return {
+        started,
+        ended,
+        startMinutes,
+        endMinutes,
+        currentMinutes,
+        minutesSinceStart: currentMinutes - startMinutes,
+        minutesSinceEnd: currentMinutes - endMinutes
+      };
+    } catch {
+      return { started: true, ended: true, label: 'Format xato' };
+    }
+  }
+
   async testBotToken(token) {
     if (!token) return { success: false, error: "Bot token kiritilmadi" };
     try {
@@ -28,45 +62,59 @@ class TelegramService {
     const botToken = botTokenOverride || this.getSetting('telegram_bot_token');
     const mockMode = this.getSetting('mock_mode') === '1';
 
-    // If bot token exists and valid chat id, attempt real Telegram API call
-    if (botToken && chatId && !mockMode) {
+    // Chat ID tekshiruvi (LOGIK XATO 3: Chat ID bo'lmasa xabar yuborilmaydi)
+    if (!chatId || String(chatId).trim() === '') {
+      return {
+        success: false,
+        mode: 'NO_CHAT_ID',
+        error: "O'qituvchining Telegram Chat ID si kiritilmagan yoki botga ulanmagan"
+      };
+    }
+
+    // Haqiqiy Bot Token bo'lsa va real rejimda bo'lsa
+    if (botToken && !mockMode) {
       try {
         const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: chatId,
+            chat_id: String(chatId).trim(),
             text: text,
             parse_mode: 'HTML',
             disable_web_page_preview: true
-          })
+          }),
+          signal: AbortSignal.timeout(8000)
         });
 
         const result = await response.json();
         if (result.ok) {
           return { success: true, mode: 'REAL', result };
         } else {
-          return { success: false, mode: 'REAL', error: result.description };
+          return { success: false, mode: 'REAL', error: result.description || 'Telegram xatosi' };
         }
       } catch (err) {
-        return { success: false, mode: 'REAL', error: err.message };
+        return { success: false, mode: 'REAL', error: `Ulanish xatosi: ${err.message}` };
       }
     }
 
-    // Otherwise Mock Delivery (recorded seamlessly in DB for demonstration/dashboard)
+    // Mock Simulyatsiya rejimi
     return {
       success: true,
       mode: 'MOCK',
-      info: 'Simulyatsiya rejimida muvaffaqiyatli yuborildi (Bot token kiritilganda haqiqiy telegramga boradi)'
+      info: 'Simulyatsiya rejimida muvaffaqiyatli yuborildi'
     };
   }
 
-  formatLessonWarning(lesson, teacher) {
+  formatLessonWarning(lesson, teacher, reminderNumber = 1) {
     const statusText = lesson.attendance_status === 'PARTIAL'
       ? `⚠️ <b>Qisman belgilangan</b> (${lesson.marked_students}/${lesson.total_students} nafar)`
       : `❌ <b>Umuman belgilanmagan</b> (0/${lesson.total_students} nafar)`;
 
-    return `🔔 <b>HEMIS DAVOMAT OGOHLANTIRISHI</b>
+    const reminderHeader = reminderNumber > 1
+      ? `🚨 <b>HEMIS DAVOMAT: ${reminderNumber}-OGOHLANTIRISH!</b>`
+      : `🔔 <b>HEMIS DAVOMAT OGOHLANTIRISHI</b>`;
+
+    return `${reminderHeader}
 
 Hurmatli <b>${teacher.full_name}</b>!
 
@@ -83,7 +131,7 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
 👉 <b>HEMIS ga kirish:</b> ${this.getSetting('hemis_api_url') || 'https://student.fstu.uz'}`;
   }
 
-  async notifyTeacherForLesson(lessonId, isManualResend = false) {
+  async notifyTeacherForLesson(lessonId, isManual = false) {
     const lesson = db.prepare(`
       SELECT l.*, s.name as subject_name, g.name as group_name
       FROM lessons l
@@ -101,13 +149,6 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
       throw new Error(`O'qituvchi topilmadi: ID ${lesson.teacher_id}`);
     }
 
-    const message = this.formatLessonWarning(lesson, teacher);
-    const sendResult = await this.sendMessage(teacher.telegram_chat_id, message);
-
-    const deliveryStatus = sendResult.success
-      ? (sendResult.mode === 'REAL' ? 'SENT' : 'MOCK_SENT')
-      : 'FAILED';
-
     // Check existing notification
     const existing = db.prepare(`
       SELECT * FROM notifications 
@@ -115,17 +156,29 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
       ORDER BY id DESC LIMIT 1
     `).get(lesson.id, teacher.id);
 
+    const reminderNumber = existing ? existing.reminder_count + 1 : 1;
+    const message = this.formatLessonWarning(lesson, teacher, reminderNumber);
+    const sendResult = await this.sendMessage(teacher.telegram_chat_id, message);
+
+    let deliveryStatus = 'FAILED';
+    if (sendResult.success) {
+      deliveryStatus = (sendResult.mode === 'REAL' ? 'SENT' : 'MOCK_SENT');
+    } else if (sendResult.mode === 'NO_CHAT_ID') {
+      deliveryStatus = 'NO_CHAT_ID';
+    }
+
     let notificationId;
     if (existing) {
-      const nextCount = existing.reminder_count + 1;
       db.prepare(`
         UPDATE notifications 
         SET sent_at = datetime('now', 'localtime'),
             message = ?,
             status = ?,
+            resolved = 0,
+            resolved_at = NULL,
             reminder_count = ?
         WHERE id = ?
-      `).run(message, deliveryStatus, nextCount, existing.id);
+      `).run(message, deliveryStatus, reminderNumber, existing.id);
       notificationId = existing.id;
     } else {
       const insert = db.prepare(`
@@ -138,8 +191,8 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
 
     // Log action
     db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
-      isManualResend ? 'MANUAL_NOTIFY' : 'AUTO_NOTIFY',
-      `O'qituvchi ${teacher.full_name} (${teacher.telegram_username || teacher.phone}) ga ogohlantirish yuborildi. Status: ${deliveryStatus}`
+      isManual ? 'MANUAL_NOTIFY' : 'AUTO_NOTIFY',
+      `O'qituvchi ${teacher.full_name} (${teacher.telegram_chat_id || 'Chat ID yo‘q'}) ga #${reminderNumber}-ogohlantirish. Status: ${deliveryStatus}`
     );
 
     return {
@@ -153,16 +206,18 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
     };
   }
 
-  async checkAndAutoNotify() {
-    // 1. Check all lessons today
+  // Dars jadvalini va davomatni tekshirish (LOGIK XATOLAR TO'G'RILANDI)
+  async checkAndAutoNotify(isManualTrigger = false) {
+    const today = new Date().toISOString().split('T')[0];
+
     const lessons = db.prepare(`
-      SELECT l.*, s.name as subject_name, g.name as group_name, t.full_name as teacher_name
+      SELECT l.*, s.name as subject_name, g.name as group_name, t.full_name as teacher_name, t.telegram_chat_id
       FROM lessons l
       JOIN subjects s ON l.subject_id = s.id
       JOIN groups g ON l.group_id = g.id
       JOIN teachers t ON l.teacher_id = t.id
-      WHERE l.date = date('now', 'localtime')
-    `).all();
+      WHERE l.date = ?
+    `).all(today);
 
     const summary = {
       total: lessons.length,
@@ -171,20 +226,22 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
       partial: 0,
       notified: 0,
       resolvedNow: 0,
-      stillPending: 0
+      stillPending: 0,
+      skippedFutureLessons: 0
     };
 
     for (const l of lessons) {
-      // Check existing notification
       const notif = db.prepare(`
         SELECT * FROM notifications 
         WHERE lesson_id = ? AND teacher_id = ? 
         ORDER BY id DESC LIMIT 1
       `).get(l.id, l.teacher_id);
 
+      // Agar davomat to'liq olingan bo'lsa
       if (l.attendance_status === 'COMPLETED') {
         summary.completed++;
-        // If it was notified before and not yet marked resolved, mark it as resolved!
+
+        // Agar avval ogohlantirilgan bo'lsa va hali yopilmagan bo'lsa -> Yopamiz!
         if (notif && notif.resolved === 0) {
           db.prepare(`
             UPDATE notifications 
@@ -195,24 +252,68 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
           summary.resolvedNow++;
           db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
             'TEACHER_RESOLVED',
-            `O'qituvchi ${l.teacher_name} ogohlantirishdan so'ng ${l.group_name} guruhida davomatni to'liq belgiladi!`
+            `O'qituvchi ${l.teacher_name} ogohlantirishdan so'ng ${l.group_name} guruhida davomatni to'liq yakunladi!`
           );
         }
-      } else {
-        if (l.attendance_status === 'PARTIAL') summary.partial++;
-        if (l.attendance_status === 'NOT_TAKEN') summary.notTaken++;
+        continue;
+      }
 
-        if (!notif) {
-          // Send first alert
+      // Davomat chala yoki olinmagan bo'lsa
+      if (l.attendance_status === 'PARTIAL') summary.partial++;
+      if (l.attendance_status === 'NOT_TAKEN') summary.notTaken++;
+
+      // LOGIK TEKSHIRUV 1: Dars boshlanganmi?
+      // Agar avtomatik cron bo'lsa va dars hali boshlanmagan bo'lsa -> ERTALABDAN XABAR YUBORILMAYDI!
+      const timing = this.getLessonTiming(l.pair_time);
+      if (!isManualTrigger && !timing.started) {
+        summary.skippedFutureLessons++;
+        continue; // Dars boshlanishi kutilmoqda
+      }
+
+      // LOGIK TEKSHIRUV 2: Birinchi ogohlantirish yoki Takroriy ogohlantirish (Cooldown)
+      if (!notif) {
+        // Hali ogohlantirish yuborilmagan -> 1-ogohlantirish yuboriladi
+        await this.notifyTeacherForLesson(l.id, isManualTrigger);
+        summary.notified++;
+      } else if (notif.resolved === 0) {
+        summary.stillPending++;
+
+        // Agar oxirgi ogohlantirishdan keyin kamida 30 daqiqa o'tgan bo'lsa va avtomatik rejim bo'lsa -> Qayta eslatamiz!
+        const lastSent = new Date(notif.sent_at).getTime();
+        const now = Date.now();
+        const diffMinutes = Math.floor((now - lastSent) / (1000 * 60));
+
+        if (!isManualTrigger && diffMinutes >= 30 && notif.reminder_count < 3) {
           await this.notifyTeacherForLesson(l.id, false);
           summary.notified++;
-        } else if (notif.resolved === 0) {
-          summary.stillPending++;
         }
       }
     }
 
     return summary;
+  }
+
+  // LOGIK IMKONIYAT 4: Botga /start bosganda o'qituvchini avtomatik ulash (Deep link)
+  linkTeacherChat(hemisId, chatId, username = null) {
+    if (!hemisId || !chatId) return { success: false, error: 'Parametrlar yetarli emas' };
+
+    const teacher = db.prepare('SELECT * FROM teachers WHERE hemis_id = ?').get(hemisId);
+    if (!teacher) {
+      return { success: false, error: `Bunday HEMIS ID ga ega o'qituvchi topilmadi: ${hemisId}` };
+    }
+
+    db.prepare(`
+      UPDATE teachers 
+      SET telegram_chat_id = ?, telegram_username = coalesce(?, telegram_username)
+      WHERE id = ?
+    `).run(String(chatId), username ? `@${username.replace('@','')}` : null, teacher.id);
+
+    db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+      'TELEGRAM_LINKED',
+      `O'qituvchi ${teacher.full_name} (${teacher.hemis_id}) Telegram botga muvaffaqiyatli bog'landi. Chat ID: ${chatId}`
+    );
+
+    return { success: true, teacher };
   }
 }
 
