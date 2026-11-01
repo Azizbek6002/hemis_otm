@@ -1,0 +1,24 @@
+{
+  "name": "hemis-attendance-guard",
+  "version": "1.0.0",
+  "description": "HEMIS O'qituvchilar Davomat Nazorati va Telegram Ogohlantirish Tizimi",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "dev": "node --no-warnings --watch server.js"
+  },
+  "keywords": [
+    "hemis",
+    "attendance",
+    "telegram",
+    "bot",
+    "university"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3"
+  }
+}

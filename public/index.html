@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HEMIS | O'qituvchilar Davomat Nazorati (Super Admin)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- TOP HEADER (HEMIS Style) -->
+  <header class="hemis-header">
+    <div class="header-left">
+      <button class="toggle-sidebar-btn" id="toggleSidebarBtn" title="Menyuni ochish/yopish">
+        <i class="fa fa-bars"></i>
+      </button>
+      <div class="brand-title">
+        <i class="fa fa-graduation-cap"></i>
+        <span>HEMIS Nazorat</span>
+        <span class="brand-badge">Super Admin</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="lang-selector">
+        <i class="fa fa-globe"></i>
+        <span>O'zbekcha</span>
+      </div>
+
+      <div class="notification-bell" onclick="switchTab('monitoring')" title="Ogohlantirish kutilayotgan o'qituvchilar">
+        <i class="fa fa-bell" style="font-size: 16px;"></i>
+        <span class="notification-badge" id="headerAlertBadge">0</span>
+      </div>
+
+      <div class="user-profile">
+        <div class="user-avatar">
+          <i class="fa fa-user-shield"></i>
+        </div>
+        <div class="user-info">
+          <span class="user-name">BOSH ADMIN</span>
+          <span class="user-role">OTM Rahbariyati</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <!-- SIDEBAR (HEMIS Dark Slate Style) -->
+    <aside class="hemis-sidebar">
+      <ul class="sidebar-menu">
+        <li class="menu-category">Asosiy menyu</li>
+        <li class="menu-item active" data-tab="monitoring">
+          <i class="fa fa-calendar-check"></i>
+          <span>Davomat monitoringi</span>
+          <span class="menu-badge" id="menuWarningBadge">0</span>
+        </li>
+        <li class="menu-item" data-tab="teachers">
+          <i class="fa fa-chalkboard-teacher"></i>
+          <span>O'qituvchilar ro'yxati</span>
+        </li>
+        <li class="menu-item" data-tab="alerts">
+          <i class="fa fa-paper-plane"></i>
+          <span>Telegram xabarnomalar</span>
+          <span class="menu-badge blue"><i class="fa fa-history"></i></span>
+        </li>
+        
+        <li class="menu-category">Integratsiya va Sozlamalar</li>
+        <li class="menu-item" data-tab="settings">
+          <i class="fa fa-sliders-h"></i>
+          <span>HEMIS API & Bot</span>
+        </li>
+        <li class="menu-item" data-tab="simulation">
+          <i class="fa fa-play-circle"></i>
+          <span>Jonli test & Simulyator</span>
+          <span class="menu-badge green">Demo</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div><strong>Dastur versiyasi:</strong> 1.9.81</div>
+        <div><strong>Yadro:</strong> 2.0.41.1</div>
+        <div id="liveClockText" style="margin-top: 4px; color: #90a4ae;">Sana yuklanmoqda...</div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="hemis-main">
+
+      <!-- BREADCRUMB -->
+      <div class="breadcrumb-bar">
+        <div class="breadcrumb-path">
+          <i class="fa fa-home"></i>
+          <a href="#" onclick="switchTab('monitoring')">Bosh sahifa</a>
+          <span>/</span>
+          <span id="breadcrumbCurrent">Davomat monitoringi va Ogohlantirishlar</span>
+        </div>
+        <div>
+          <span class="badge badge-info" id="mockModeStatusBadge">Yuklanmoqda...</span>
+        </div>
+      </div>
+
+      <!-- GREEN BANNER CARD (From Screenshot 1) -->
+      <div class="hemis-banner-card">
+        <div class="banner-left">
+          <div class="banner-icon">
+            <i class="fa fa-user-check"></i>
+          </div>
+          <div class="banner-info">
+            <h2>
+              HEMIS O'qituvchilar Davomat Nazorat Tizimi
+              <span class="banner-status-tag">/ Faol monitoring</span>
+            </h2>
+            <p>
+              Har bir guruhda talabalar to'liq bor/yo'q qilinganligini tekshiradi va esdan chiqargan o'qituvchilarga Telegram orqali avtomatik ogohlantirish yuboradi.
+            </p>
+          </div>
+        </div>
+
+        <div class="banner-right">
+          <div class="semester-pills">
+            <span class="label">2026-2027 / SEMESTR</span>
+            <span class="sem-pill">1</span>
+            <span class="sem-pill">2</span>
+            <span class="sem-pill">3</span>
+            <span class="sem-pill">4</span>
+            <span class="sem-pill active">5</span>
+            <span class="sem-pill">6</span>
+            <span class="sem-pill">7</span>
+            <span class="sem-pill">8</span>
+          </div>
+
+          <button class="btn btn-primary" id="btnCheckNow" style="padding: 8px 16px;">
+            <i class="fa fa-bolt"></i> Hozir tekshirish & Xabar yuborish
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI METRIC CARDS (Pastel Circles from Screenshot 1) -->
+      <div class="section-box">
+        <div class="section-header">
+          <span><i class="fa fa-chart-pie" style="color: var(--hemis-blue); margin-right: 6px;"></i> Bugungi Davomat Ko'rsatkichlari (Super Admin)</span>
+          <span class="section-header-action" onclick="loadAllData()"><i class="fa fa-sync-alt" title="Yangilash"></i></span>
+        </div>
+        <div class="quick-stats-grid">
+          <div class="stat-item-card" onclick="setFilterStatus('')">
+            <div class="stat-icon-circle blue">
+              <i class="fa fa-calendar-day"></i>
+            </div>
+            <div class="stat-number" id="statTotalLessons">0</div>
+            <div class="stat-title">Bugungi jami darslar</div>
+          </div>
+
+          <div class="stat-item-card" onclick="setFilterStatus('COMPLETED')">
+            <div class="stat-icon-circle green">
+              <i class="fa fa-check-circle"></i>
+            </div>
+            <div class="stat-number" id="statCompleted">0</div>
+            <div class="stat-title">To'liq olingan davomat</div>
+          </div>
+
+          <div class="stat-item-card" onclick="setFilterStatus('INCOMPLETE')">
+            <div class="stat-icon-circle red">
+              <i class="fa fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-number" id="statIncomplete">0</div>
+            <div class="stat-title">Olinmagan / Chala (Xavf)</div>
+          </div>
+
+          <div class="stat-item-card" onclick="switchTab('alerts')">
+            <div class="stat-icon-circle yellow">
+              <i class="fa fa-paper-plane"></i>
+            </div>
+            <div class="stat-number" id="statNotified">0</div>
+            <div class="stat-title">Ogohlantirish yuborilgan</div>
+          </div>
+
+          <div class="stat-item-card" onclick="setFilterStatus('RESOLVED')">
+            <div class="stat-icon-circle teal">
+              <i class="fa fa-check-double"></i>
+            </div>
+            <div class="stat-number" id="statResolved">0</div>
+            <div class="stat-title">Ogohlantirishdan so'ng to'g'irladi</div>
+          </div>
+
+          <div class="stat-item-card" onclick="setFilterStatus('PENDING_WARNING')">
+            <div class="stat-icon-circle purple">
+              <i class="fa fa-user-clock"></i>
+            </div>
+            <div class="stat-number" id="statStillPending">0</div>
+            <div class="stat-title">Hali ham qilinmagan (Nazoratda)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: DAVOMAT MONITORINGI (LIVE ATTENDANCE) -->
+      <div class="tab-content active" id="tab-monitoring">
+        <!-- CONTROLS & FILTERS -->
+        <div class="controls-bar">
+          <div class="controls-left">
+            <select class="form-select" id="statusFilter">
+              <option value="">Barcha darslar</option>
+              <option value="NOT_TAKEN">❌ Umuman olinmagan</option>
+              <option value="PARTIAL">⚠️ Qisman belgilangan</option>
+              <option value="COMPLETED">✅ To'liq belgilangan</option>
+              <option value="INCOMPLETE">🚨 Barcha chala/olinmaganlar</option>
+              <option value="RESOLVED">🎯 Ogohlantirishdan so'ng to'g'irlanganlar</option>
+            </select>
+
+            <select class="form-select" id="deptFilter">
+              <option value="ALL">Barcha kafedralar</option>
+              <option value="Dasturiy injiniring">Dasturiy injiniring</option>
+              <option value="Axborot xavfsizligi">Axborot xavfsizligi</option>
+              <option value="Sun’iy intellekt">Sun’iy intellekt</option>
+              <option value="Kompyuter tizimlari">Kompyuter tizimlari</option>
+              <option value="Ijtimoiy gumanitar fanlar">Ijtimoiy gumanitar fanlar</option>
+            </select>
+
+            <input type="text" class="form-input" id="searchInput" placeholder="O'qituvchi, guruh yoki fan..." style="min-width: 220px;">
+          </div>
+
+          <div class="controls-right">
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #475569;">
+              <input type="checkbox" id="autoRefreshToggle" checked> Avto-yangilanish (20s)
+            </label>
+            <button class="btn btn-light" onclick="loadAllData()">
+              <i class="fa fa-sync-alt"></i> Yangilash
+            </button>
+          </div>
+        </div>
+
+        <!-- LESSONS DATA TABLE -->
+        <div class="section-box">
+          <div class="section-header">
+            <span><i class="fa fa-list"></i> Bugungi Darslar va O'qituvchilar Davomat Holati</span>
+            <span id="lessonsCountLabel" style="font-size: 11px; color: #64748b; font-weight: normal;"></span>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th style="width: 35px;">#</th>
+                  <th>O'qituvchi (HEMIS & Telegram)</th>
+                  <th>Guruh</th>
+                  <th>Fan & Auditoriya</th>
+                  <th>Juftlik</th>
+                  <th>Davomat holati</th>
+                  <th>Telegram ogohlantirish</th>
+                  <th>Natija</th>
+                  <th style="width: 180px;">Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="lessonsTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: O'QITUVCHILAR RO'YXATI -->
+      <div class="tab-content" id="tab-teachers">
+        <div class="controls-bar">
+          <div class="controls-left">
+            <button class="btn btn-success" id="btnAddTeacherModal">
+              <i class="fa fa-user-plus"></i> Yangi o'qituvchi kiritish
+            </button>
+            <span style="font-size: 12px; color: #64748b; margin-left: 10px;">
+              Universitet o'qituvchilarining HEMIS ID va Telegram Chat ID ma'lumotlari
+            </span>
+          </div>
+          <div class="controls-right">
+            <button class="btn btn-light" onclick="loadTeachers()">
+              <i class="fa fa-sync-alt"></i> Yangilash
+            </button>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-header">
+            <span><i class="fa fa-users"></i> Barcha O'qituvchilar va Telegram Bog'lanishlari</span>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th style="width: 35px;">#</th>
+                  <th>HEMIS ID</th>
+                  <th>F.I.SH</th>
+                  <th>Kafedra</th>
+                  <th>Telefon</th>
+                  <th>Telegram Username</th>
+                  <th>Telegram Holati</th>
+                  <th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="teachersTableBody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: TELEGRAM XABARNOMALAR JURNALI -->
+      <div class="tab-content" id="tab-alerts">
+        <div class="controls-bar">
+          <div class="controls-left">
+            <span style="font-size: 12px; color: #475569;">
+              <i class="fa fa-info-circle" style="color: var(--hemis-blue);"></i> O'qituvchilarga yuborilgan barcha ogohlantirish xabarlari va ularning to'g'irlash natijasi
+            </span>
+          </div>
+          <div class="controls-right">
+            <button class="btn btn-light" onclick="loadNotifications()">
+              <i class="fa fa-sync-alt"></i> Yangilash
+            </button>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-header">
+            <span><i class="fa fa-history"></i> Xabarnomalar Jurnali (Audit Log)</span>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th style="width: 35px;">#</th>
+                  <th>Yuborilgan vaqt</th>
+                  <th>O'qituvchi</th>
+                  <th>Guruh va Juftlik</th>
+                  <th>Fan</th>
+                  <th>Holat</th>
+                  <th>Natija</th>
+                </tr>
+              </thead>
+              <tbody id="alertsTableBody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: HEMIS API & BOT SOZLAMALARI -->
+      <div class="tab-content" id="tab-settings">
+        <div class="section-box" style="max-width: 850px;">
+          <div class="section-header">
+            <span><i class="fa fa-cogs"></i> HEMIS Tizimi va Telegram Bot Integratsiya Sozlamalari</span>
+          </div>
+          <div style="padding: 20px;">
+            <form id="settingsForm">
+              
+              <div style="background: #eff6ff; border-left: 4px solid var(--hemis-blue); padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; font-size: 12px; color: #1e3a8a;">
+                <strong><i class="fa fa-lightbulb"></i> Ma'lumot:</strong> HEMIS API tokenini ertaga taqdim etganingizda, uni to'g'ridan-to'g'ri quyidagi maydonga joylab "Saqlash" tugmasini bosing. Tizim avtomatik jonli HEMIS ga ulanadi!
+              </div>
+
+              <div class="settings-group">
+                <label class="settings-label">HEMIS API Base URL:</label>
+                <input type="text" class="form-input" id="hemisApiUrlInput" style="width: 100%;" placeholder="Masalan: https://student.fstu.uz/rest/v1 yoki https://api.hemis.uz/v1">
+                <div class="settings-hint">Universitet HEMIS serverining API manzili</div>
+              </div>
+
+              <div class="settings-group">
+                <label class="settings-label">HEMIS API Bearer Token:</label>
+                <input type="password" class="form-input" id="hemisApiTokenInput" style="width: 100%;" placeholder="HEMIS tizimidan beriladigan API kalit (Bearer token)">
+                <div class="settings-hint">Ertaga olinadigan haqiqiy HEMIS API tokeni shu yerga kiritiladi</div>
+                <div style="margin-top: 8px;">
+                  <button type="button" class="btn btn-light btn-sm" id="btnTestHemis">
+                    <i class="fa fa-check"></i> HEMIS API ulanishini tekshirish
+                  </button>
+                </div>
+              </div>
+
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+              <div class="settings-group">
+                <label class="settings-label">Telegram Bot Token (BotFather):</label>
+                <input type="text" class="form-input" id="telegramBotTokenInput" style="width: 100%;" placeholder="Masalan: 7123456789:AAFn_your_bot_token_here">
+                <div class="settings-hint">O'qituvchilarga ogohlantirish yuboruvchi Telegram botingizning tokeni</div>
+              </div>
+
+              <div class="settings-group">
+                <label class="settings-label">Telegram Bot Username:</label>
+                <input type="text" class="form-input" id="telegramBotUsernameInput" style="width: 100%;" placeholder="@hemis_davomat_bot">
+              </div>
+
+              <div class="settings-group" style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <label class="settings-label">O'zingizning Telegram Chat ID ga sinov xabari yuborish:</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" class="form-input" id="testTelegramChatIdInput" placeholder="Masalan: 123456789 (Chat ID)" style="flex: 1;">
+                  <button type="button" class="btn btn-primary" id="btnTestTelegram">
+                    <i class="fa fa-plug"></i> Bot aloqasini tekshirish
+                  </button>
+                </div>
+                <div class="settings-hint">Bot token kiritilgach, ushbu tugma orqali haqiqiy telefoningizga test xabar yuborib ko'rishingiz mumkin</div>
+              </div>
+
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+              <div class="settings-group">
+                <label class="form-toggle">
+                  <input type="checkbox" id="mockModeCheckbox">
+                  <div>
+                    <strong>Lokal / Simulyatsiya rejimi</strong>
+                    <div class="settings-hint">Yoqilgan bo'lsa, haqiqiy HEMIS API bolmagan paytda ham tizim to'liq ishlaydi va o'qituvchilarga xabarlar simulyatsiya qilinadi.</div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="settings-group">
+                <label class="form-toggle">
+                  <input type="checkbox" id="autoCheckCheckbox">
+                  <div>
+                    <strong>Avtomatik fon tekshiruvi (Cron job)</strong>
+                    <div class="settings-hint">Har 15 daqiqada va dars juftliklari tugagan paytda tizim o'z-o'zidan tekshiradi va xabar yuboradi.</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style="margin-top: 24px;">
+                <button type="submit" class="btn btn-success" id="btnSaveSettings" style="padding: 10px 24px; font-size: 13px;">
+                  <i class="fa fa-save"></i> Sozlamalarni saqlash
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: JONLI TEST VA SIMULYATOR (Super Admin Demo) -->
+      <div class="tab-content" id="tab-simulation">
+        <div class="section-box" style="max-width: 850px;">
+          <div class="section-header">
+            <span><i class="fa fa-play-circle" style="color: var(--hemis-green);"></i> Super Admin Jonli Test Simulyatori</span>
+          </div>
+          <div style="padding: 20px;">
+            <p style="color: #475569; margin-bottom: 16px;">
+              Ushbu bo'lim orqali siz real tizim qanday ishlashini to'liq sinovdan o'tkazishingiz mumkin:
+            </p>
+
+            <div class="settings-group">
+              <label class="settings-label">Sinov uchun darsni tanlang:</label>
+              <select class="form-select" id="simLessonSelect" style="width: 100%; padding: 8px;">
+                <option value="1">1-dars: Abdunazarov A. S. — 657-24 DIr (Operatsion tizimlar, 1-juftlik)</option>
+                <option value="3">3-dars: Rahimova Nargiza — 612-23 AT (Dasturiy injenering, 2-juftlik)</option>
+                <option value="4">4-dars: Saidov Dilshod — 657-24 DIr (Algoritmlarni loyihalash, 2-juftlik)</option>
+                <option value="6">6-dars: Xoliqova Feruza — 645-24 KI (Ma'rifat darsi, 3-juftlik)</option>
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 20px;">
+              <div style="background: #fff5f5; border: 1px solid #fed7d7; padding: 16px; border-radius: 6px;">
+                <h4 style="color: #c53030; font-size: 13px; margin-bottom: 8px;">1-QADAM</h4>
+                <p style="font-size: 11px; color: #742a2a; margin-bottom: 12px;">
+                  O'qituvchi darsga kirdi, lekin davomatni belgilashni unutdi (0/26 olingan).
+                </p>
+                <button class="btn btn-danger btn-sm" onclick="simulateScenario('MARK_UNMARKED')">
+                  <i class="fa fa-times"></i> Davomat olinmadi qilish
+                </button>
+              </div>
+
+              <div style="background: #fffaf0; border: 1px solid #feebc8; padding: 16px; border-radius: 6px;">
+                <h4 style="color: #dd6b20; font-size: 13px; margin-bottom: 8px;">2-QADAM</h4>
+                <p style="font-size: 11px; color: #7b341e; margin-bottom: 12px;">
+                  Tizim o'qituvchiga Telegram orqali qat'iy ogohlantirish xabarini yuboradi.
+                </p>
+                <button class="btn btn-warning btn-sm" onclick="simulateScenario('RUN_WARNING')">
+                  <i class="fa fa-paper-plane"></i> Telegramga xabar yuborish
+                </button>
+              </div>
+
+              <div style="background: #f0fff4; border: 1px solid #c6f6d5; padding: 16px; border-radius: 6px;">
+                <h4 style="color: #2f855a; font-size: 13px; margin-bottom: 8px;">3-QADAM</h4>
+                <p style="font-size: 11px; color: #22543d; margin-bottom: 12px;">
+                  O'qituvchi ogohlantirishni ko'rib, HEMIS ga kirib davomatni to'liq kiritdi.
+                </p>
+                <button class="btn btn-success btn-sm" onclick="simulateScenario('MARK_COMPLETED')">
+                  <i class="fa fa-check-double"></i> To'liq kiritdi (Hal bo'ldi)
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; padding: 14px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <strong>🎯 Natija:</strong> Qadamlarni bosgandan so'ng, yuqoridagi <em>"Davomat monitoringi"</em> bo'limiga o'ting — tizim ogohlantirish yuborilganini, keyin esa o'qituvchi davomatni to'g'irlaganini qanday aniq ko'rsatib berayotganini ko'rishingiz mumkin!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER (HEMIS Version signature) -->
+      <footer class="hemis-page-footer">
+        <div>
+          Dastur versiyasi 1.9.81 / Yadro 2.0.41.1 / HEMIS Davomat Monitoring & Ogohlantirish Tizimi
+        </div>
+        <div>
+          OTM Boshqaruv &bull; Super Admin &bull; 2026-yil
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT TEACHER -->
+  <div class="modal-overlay" id="teacherModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="teacherModalTitle">O'qituvchi ma'lumotlari</span>
+        <button class="modal-close" onclick="closeTeacherModal()">&times;</button>
+      </div>
+      <form id="teacherForm">
+        <div class="modal-body">
+          <input type="hidden" id="teacherIdInput">
+
+          <div class="settings-group">
+            <label class="settings-label">HEMIS ID:</label>
+            <input type="text" class="form-input" id="teacherHemisIdInput" style="width: 100%;" required>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">F.I.SH (To'liq ism-familiya):</label>
+            <input type="text" class="form-input" id="teacherNameInput" style="width: 100%;" required>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">Kafedra:</label>
+            <input type="text" class="form-input" id="teacherDeptInput" style="width: 100%;" value="Dasturiy injiniring">
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">Telefon raqami:</label>
+            <input type="text" class="form-input" id="teacherPhoneInput" style="width: 100%;" placeholder="+998901234567">
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">Telegram Username (@username):</label>
+            <input type="text" class="form-input" id="teacherTelegramUsernameInput" style="width: 100%;" placeholder="@username">
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">Telegram Chat ID:</label>
+            <input type="text" class="form-input" id="teacherChatIdInput" style="width: 100%;" placeholder="Masalan: 12345678">
+            <div class="settings-hint">O'qituvchi botga /start bosganda yoki bot orqali avtomatik olinadigan Telegram ID si</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" onclick="closeTeacherModal()">Bekor qilish</button>
+          <button type="submit" class="btn btn-primary">Saqlash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TELEGRAM MESSAGE PREVIEW -->
+  <div class="modal-overlay" id="messagePreviewModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span><i class="fab fa-telegram"></i> Telegram Ogohlantirish Xabari Namunasi</span>
+        <button class="modal-close" onclick="closeMessagePreview()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="telegram-preview" id="messagePreviewContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeMessagePreview()">Tushunarli</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    function setFilterStatus(status) {
+      switchTab('monitoring');
+      const filterSelect = document.getElementById('statusFilter');
+      if (filterSelect) {
+        filterSelect.value = status;
+        state.filters.status = status;
+        loadLessons();
+      }
+    }
+  </script>
+</body>
+</html>
