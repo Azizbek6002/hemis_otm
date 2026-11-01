@@ -985,6 +985,80 @@ body.sidebar-collapsed .hemis-main {
   gap: 16px;
 }
 
+/* MODAL SUB-TABS (3 BO'LIM: HEMIS orqali, Qo'lda, Telegram orqali) */
+.modal-nav-tabs {
+  display: flex;
+  background-color: #f1f5f9;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0 14px;
+  gap: 6px;
+}
+
+.modal-nav-tab {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.modal-nav-tab:hover {
+  color: var(--hemis-blue);
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.modal-nav-tab.active {
+  color: var(--hemis-blue);
+  border-bottom-color: var(--hemis-blue);
+  background-color: #ffffff;
+  font-weight: 700;
+}
+
+.modal-nav-pane {
+  display: none;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-nav-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-card-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.step-card-box.blue {
+  background: #f0f7ff;
+  border-color: #bae6fd;
+}
+
+.step-card-box.green {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.step-card-box.slate {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .hemis-sidebar {

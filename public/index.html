@@ -525,81 +525,170 @@
     </main>
   </div>
 
-  <!-- MODAL: ADD / EDIT TEACHER (With HEMIS Quick Search & Autofill) -->
+  <!-- MODAL: ADD / EDIT TEACHER (3 BO'LIM: HEMIS, Qo'lda, Telegram) -->
   <div class="modal-overlay" id="teacherModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 650px;">
       <div class="modal-header">
-        <span id="teacherModalTitle">O'qituvchi ma'lumotlari</span>
+        <span id="teacherModalTitle"><i class="fa fa-user-plus"></i> O'qituvchi qo'shish va bog'lash</span>
         <button class="modal-close" onclick="closeTeacherModal()">&times;</button>
       </div>
+
+      <!-- 3 TA BO'LIM TABLARI (User talabi bo'yicha) -->
+      <div class="modal-nav-tabs">
+        <button type="button" class="modal-nav-tab active" data-pane="pane-hemis">
+          <i class="fa fa-bolt" style="color: #f59e0b;"></i> 1. HEMIS orqali avtomatik
+        </button>
+        <button type="button" class="modal-nav-tab" data-pane="pane-manual">
+          <i class="fa fa-pen" style="color: var(--hemis-blue);"></i> 2. Qo'lda kiritish
+        </button>
+        <button type="button" class="modal-nav-tab" data-pane="pane-telegram">
+          <i class="fab fa-telegram" style="color: #0284c7;"></i> 3. Telegram orqali
+        </button>
+      </div>
+
       <form id="teacherForm">
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 16px 20px;">
           <input type="hidden" id="teacherIdInput">
 
-          <!-- HEMIS QUICK SEARCH & AUTOFILL (User requested) -->
-          <div class="settings-group" id="hemisQuickSearchBox" style="background: #f0f7ff; border: 1px solid #bae6fd; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px;">
-            <label class="settings-label" style="color: #0369a1; display: flex; align-items: center; gap: 6px;">
-              <i class="fa fa-search"></i>
-              <span>O'qituvchi F.I.SH (HEMIS bazasidan tezkor qidirish):</span>
-            </label>
-            <div style="position: relative;">
-              <input type="text" class="form-input" id="hemisTeacherSearchInput" placeholder="Masalan: Abdunazarov, Karimov, Aliyev, Toshmatov..." autocomplete="off" style="width: 100%; font-size: 13px;">
-              <div id="hemisSearchResults" class="hemis-search-dropdown" style="display: none;"></div>
-            </div>
-            <div class="settings-hint" style="color: #0284c7; margin-top: 6px;">
-              <i class="fa fa-lightbulb"></i> Ism yoki familiyani kiritishni boshlang — HEMIS ID, Kafedra, Fakultet va Telefon raqami avtomatik to'ldiriladi!
-            </div>
-          </div>
+          <!-- 1-BO'LIM: HEMIS ORQALI AVTOMATIK -->
+          <div class="modal-nav-pane active" id="pane-hemis">
+            <div class="step-card-box blue">
+              <div style="font-weight: 700; font-size: 13px; color: #0369a1; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa fa-bolt"></i> 1-BO'LIM: HEMIS orqali avtomatik qidirish va to'ldirish
+              </div>
+              <p style="font-size: 12px; color: #0284c7; margin-bottom: 12px;">
+                Universitet HEMIS tizimi ulangan bo'lsa, o'qituvchi ism-familiyasini yozish kifoya — HEMIS ID, Kafedra va Telefon raqami bir zumda avtomatik yuklanadi.
+              </p>
 
-          <div id="autofillSuccessAlert" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 8px 12px; border-radius: 4px; margin-bottom: 14px; font-size: 12px;">
-            <i class="fa fa-check-circle"></i> HEMIS tizimidan ma'lumotlar avtomatik to'ldirildi! Faqat o'qituvchining Telegram manzilini kiriting.
-          </div>
-
-          <div class="settings-group">
-            <label class="settings-label">HEMIS ID (O'qituvchi kodi):</label>
-            <input type="text" class="form-input" id="teacherHemisIdInput" style="width: 100%;" required placeholder="Masalan: T-10291">
-          </div>
-
-          <div class="settings-group">
-            <label class="settings-label">F.I.SH (To'liq ism-sharif):</label>
-            <input type="text" class="form-input" id="teacherNameInput" style="width: 100%;" required placeholder="Masalan: Abdunazarov A. S.">
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="settings-group">
-              <label class="settings-label">Kafedra:</label>
-              <input type="text" class="form-input" id="teacherDeptInput" style="width: 100%;" value="Dasturiy injiniring">
+              <div class="settings-group" style="position: relative; margin-bottom: 8px;">
+                <label class="settings-label" style="color: #0f172a;">O'qituvchi F.I.SH (Ism yoki familiyani yozing):</label>
+                <div style="position: relative;">
+                  <input type="text" class="form-input" id="hemisTeacherSearchInput" placeholder="Masalan: Abdunazarov, Karimov, Aliyev, Toshmatov..." autocomplete="off" style="width: 100%; font-size: 13px; padding-left: 32px;">
+                  <i class="fa fa-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8;"></i>
+                  <div id="hemisSearchResults" class="hemis-search-dropdown" style="display: none;"></div>
+                </div>
+              </div>
             </div>
 
-            <div class="settings-group">
-              <label class="settings-label">Telefon raqami:</label>
-              <input type="text" class="form-input" id="teacherPhoneInput" style="width: 100%;" placeholder="+998901234567">
+            <!-- Selected Teacher Preview Banner -->
+            <div id="selectedTeacherPreview" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px 14px; margin-top: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 700; color: #065f46; font-size: 13px;" id="previewTeacherName">Abdunazarov A. S.</div>
+                  <div style="font-size: 11px; color: #047857; margin-top: 2px;" id="previewTeacherDetails">HEMIS ID: T-10291 &bull; Dasturiy injiniring</div>
+                </div>
+                <span class="badge badge-success"><i class="fa fa-check"></i> Tanlandi</span>
+              </div>
+              <div style="margin-top: 10px;">
+                <button type="button" class="btn btn-success btn-sm" onclick="goToTeacherPane('pane-telegram')">
+                  <i class="fab fa-telegram"></i> 3-bo'lim: Telegram manzilini kiritishga o'tish &rarr;
+                </button>
+              </div>
             </div>
           </div>
 
-          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 16px 0;">
+          <!-- 2-BO'LIM: QO'LDA KIRITISH -->
+          <div class="modal-nav-pane" id="pane-manual">
+            <div class="step-card-box slate" style="padding: 14px 16px;">
+              <div style="font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa fa-pen"></i> 2-BO'LIM: Qo'lda kiritish (Asosiy ma'lumotlar)
+              </div>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">
-            <div style="font-weight: 600; font-size: 12px; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i class="fab fa-telegram" style="color: #0284c7; font-size: 16px;"></i> Telegram Bog'lanish Ma'lumotlari:
-            </div>
-            
-            <div class="settings-group" style="margin-bottom: 10px;">
-              <label class="settings-label">Telegram Username (@username):</label>
-              <input type="text" class="form-input" id="teacherTelegramUsernameInput" style="width: 100%;" placeholder="@username">
-            </div>
+              <div class="settings-group">
+                <label class="settings-label">HEMIS ID (O'qituvchi kodi):</label>
+                <input type="text" class="form-input" id="teacherHemisIdInput" style="width: 100%;" required placeholder="Masalan: T-10291">
+              </div>
 
-            <div class="settings-group" style="margin-bottom: 0;">
-              <label class="settings-label">Telegram Chat ID (ID raqami):</label>
-              <input type="text" class="form-input" id="teacherChatIdInput" style="width: 100%;" placeholder="Masalan: 71928374">
-              <div class="settings-hint">O'qituvchi botga <code>/start</code> bosganda uning chat ID si olinadi yoki qo'lda kiritiladi</div>
+              <div class="settings-group">
+                <label class="settings-label">F.I.SH (To'liq ism-sharif):</label>
+                <input type="text" class="form-input" id="teacherNameInput" style="width: 100%;" required placeholder="Masalan: Abdunazarov A. S.">
+              </div>
+
+              <div class="settings-group">
+                <label class="settings-label" style="display: flex; align-items: center; justify-content: space-between;">
+                  <span>Kafedra (Ro'yxatdan tanlang):</span>
+                  <span style="font-size: 11px; color: var(--hemis-blue); font-weight: normal;"><i class="fa fa-list"></i> Menyu</span>
+                </label>
+                
+                <!-- Kafedra Tanlash Menyusi (User talabi bo'yicha) -->
+                <select class="form-select" id="teacherDeptSelect" style="width: 100%; font-size: 13px; padding: 7px 10px;">
+                  <option value="">-- Kafedrani menyudan tanlang --</option>
+                  <option value="Dasturiy injiniring">Dasturiy injiniring</option>
+                  <option value="Axborot xavfsizligi">Axborot xavfsizligi</option>
+                  <option value="Sun’iy intellekt">Sun’iy intellekt</option>
+                  <option value="Kompyuter tizimlari">Kompyuter tizimlari</option>
+                  <option value="Axborot texnologiyalari">Axborot texnologiyalari</option>
+                  <option value="Telekommunikatsiya injiniringi">Telekommunikatsiya injiniringi</option>
+                  <option value="Oliy matematika">Oliy matematika</option>
+                  <option value="Tabiiy fanlar">Tabiiy fanlar</option>
+                  <option value="Xorijiy tillar">Xorijiy tillar</option>
+                  <option value="Ijtimoiy gumanitar fanlar">Ijtimoiy gumanitar fanlar</option>
+                  <option value="CUSTOM">➕ Boshqa kafedra (qo'lda yozish)...</option>
+                </select>
+
+                <!-- Custom Kafedra input (agar ro'yxatda yo'q bo'lsa) -->
+                <input type="text" class="form-input" id="teacherDeptInput" placeholder="Yangi kafedra nomini kiriting..." style="width: 100%; margin-top: 6px; display: none;">
+              </div>
+
+              <div class="settings-group" style="margin-bottom: 0;">
+                <label class="settings-label">Telefon raqami:</label>
+                <input type="text" class="form-input" id="teacherPhoneInput" style="width: 100%;" placeholder="+998901234567">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3-BO'LIM: TELEGRAM ORQALI -->
+          <div class="modal-nav-pane" id="pane-telegram">
+            <div class="step-card-box blue" style="padding: 14px 16px;">
+              <div style="font-weight: 700; font-size: 13px; color: #0284c7; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fab fa-telegram"></i> 3-BO'LIM: Telegram orqali bog'lash
+              </div>
+              <p style="font-size: 12px; color: #475569; margin-bottom: 12px;">
+                Davomat olinmagan taqdirda bildirishnoma borishi uchun o'qituvchining Telegram username yoki Chat ID raqamini kiriting.
+              </p>
+
+              <div class="settings-group">
+                <label class="settings-label">Telegram Username (@username):</label>
+                <input type="text" class="form-input" id="teacherTelegramUsernameInput" style="width: 100%;" placeholder="@username">
+                <div class="settings-hint">Masalan: @abdunazarov_as</div>
+              </div>
+
+              <div class="settings-group">
+                <label class="settings-label">Telegram Chat ID (ID raqami):</label>
+                <input type="text" class="form-input" id="teacherChatIdInput" style="width: 100%;" placeholder="Masalan: 71928374">
+                <div class="settings-hint">O'qituvchi botga <code>/start</code> bosganda uning chat ID si olinadi yoki qo'lda kiritiladi</div>
+              </div>
+
+              <!-- Quick Bot Invite Link Box -->
+              <div style="background: #ffffff; border: 1px solid #bae6fd; border-radius: 6px; padding: 10px 12px; margin-top: 10px;">
+                <div style="font-size: 11px; font-weight: 600; color: #0369a1; margin-bottom: 4px;">
+                  <i class="fa fa-link"></i> O'qituvchini botga ulash havolasi:
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <input type="text" class="form-input" id="teacherBotInviteLink" readonly value="https://t.me/hemis_davomat_bot" style="font-size: 11px; flex: 1; background: #f8fafc;">
+                  <button type="button" class="btn btn-light btn-sm" onclick="copyBotInviteLink()"><i class="fa fa-copy"></i> Nusxa olish</button>
+                </div>
+              </div>
             </div>
           </div>
 
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-light" onclick="closeTeacherModal()">Bekor qilish</button>
-          <button type="submit" class="btn btn-primary" id="btnSubmitTeacher">Saqlash</button>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <button type="button" class="btn btn-light" id="btnPrevTeacherPane" style="display: none;" onclick="navigateTeacherPane(-1)">
+              <i class="fa fa-chevron-left"></i> Oldingi
+            </button>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-light" onclick="closeTeacherModal()">Bekor qilish</button>
+            <button type="button" class="btn btn-primary" id="btnNextTeacherPane" onclick="navigateTeacherPane(1)">
+              Keyingi <i class="fa fa-chevron-right"></i>
+            </button>
+            <button type="submit" class="btn btn-success" id="btnSubmitTeacher">
+              <i class="fa fa-save"></i> Saqlash
+            </button>
+          </div>
         </div>
       </form>
     </div>

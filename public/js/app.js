@@ -2,6 +2,7 @@
 
 const state = {
   activeTab: 'monitoring',
+  activeTeacherPane: 'pane-hemis',
   stats: {},
   lessons: [],
   teachers: [],
@@ -28,6 +29,8 @@ async function initApp() {
   setupNavigation();
   setupEventListeners();
   setupTeacherSearchAutofill();
+  setupTeacherModalTabs();
+  setupDepartmentSelect();
   updateLiveClock();
   setInterval(updateLiveClock, 1000);
 
@@ -57,10 +60,8 @@ function setupSidebarToggle() {
   toggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (window.innerWidth <= 900) {
-      // Mobile toggle
       document.body.classList.toggle('sidebar-open');
     } else {
-      // Desktop toggle
       document.body.classList.toggle('sidebar-collapsed');
       const nowCollapsed = document.body.classList.contains('sidebar-collapsed');
       localStorage.setItem('hemis_sidebar_collapsed', nowCollapsed ? '1' : '0');
@@ -94,7 +95,6 @@ function setupLanguageDropdown() {
     trigger.classList.toggle('active');
   });
 
-  // Close dropdown on outside click
   document.addEventListener('click', (e) => {
     if (wrapper && !wrapper.contains(e.target)) {
       menu.classList.remove('show');
@@ -102,7 +102,6 @@ function setupLanguageDropdown() {
     }
   });
 
-  // Language option selection
   const options = menu.querySelectorAll('.lang-option');
   options.forEach(opt => {
     opt.addEventListener('click', () => {
@@ -126,7 +125,6 @@ function setupLanguageDropdown() {
     });
   });
 
-  // Restore saved language
   const savedLang = localStorage.getItem('hemis_lang');
   if (savedLang) {
     const matching = menu.querySelector(`.lang-option[data-lang="${savedLang}"]`);
@@ -139,7 +137,98 @@ function setupLanguageDropdown() {
 }
 
 // -------------------------------------------------------------
-// 3. TEACHER SEARCH & AUTOFILL FROM HEMIS (User requirement)
+// 3. MODAL 3 TA BO'LIMI (HEMIS, QO'LDA, TELEGRAM) & KAFEDRA MENYUSI
+// -------------------------------------------------------------
+function setupTeacherModalTabs() {
+  const tabBtns = document.querySelectorAll('.modal-nav-tab');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetPane = btn.getAttribute('data-pane');
+      goToTeacherPane(targetPane);
+    });
+  });
+}
+
+window.goToTeacherPane = function(paneId) {
+  state.activeTeacherPane = paneId;
+
+  // Update tabs
+  document.querySelectorAll('.modal-nav-tab').forEach(btn => {
+    if (btn.getAttribute('data-pane') === paneId) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Update panes
+  document.querySelectorAll('.modal-nav-pane').forEach(pane => {
+    if (pane.id === paneId) {
+      pane.classList.add('active');
+    } else {
+      pane.classList.remove('active');
+    }
+  });
+
+  // Update Prev / Next buttons
+  const prevBtn = document.getElementById('btnPrevTeacherPane');
+  const nextBtn = document.getElementById('btnNextTeacherPane');
+  const submitBtn = document.getElementById('btnSubmitTeacher');
+
+  if (paneId === 'pane-hemis') {
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) {
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.innerHTML = '2-bo\'lim: Qo\'lda kiritish <i class="fa fa-chevron-right"></i>';
+    }
+  } else if (paneId === 'pane-manual') {
+    if (prevBtn) {
+      prevBtn.style.display = 'inline-flex';
+      prevBtn.innerHTML = '<i class="fa fa-chevron-left"></i> 1-bo\'lim (HEMIS)';
+    }
+    if (nextBtn) {
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.innerHTML = '3-bo\'lim: Telegram <i class="fa fa-chevron-right"></i>';
+    }
+  } else if (paneId === 'pane-telegram') {
+    if (prevBtn) {
+      prevBtn.style.display = 'inline-flex';
+      prevBtn.innerHTML = '<i class="fa fa-chevron-left"></i> 2-bo\'lim (Qo\'lda)';
+    }
+    if (nextBtn) nextBtn.style.display = 'none';
+  }
+};
+
+window.navigateTeacherPane = function(delta) {
+  const panes = ['pane-hemis', 'pane-manual', 'pane-telegram'];
+  const currentIndex = panes.indexOf(state.activeTeacherPane);
+  const nextIndex = currentIndex + delta;
+
+  if (nextIndex >= 0 && nextIndex < panes.length) {
+    goToTeacherPane(panes[nextIndex]);
+  }
+};
+
+// Kafedra Dropdown setup (User requirement: "Kafedra qo'shayotganda menu chiqsin tanlab kiritishga oson bo'lishi uchun")
+function setupDepartmentSelect() {
+  const select = document.getElementById('teacherDeptSelect');
+  const customInput = document.getElementById('teacherDeptInput');
+  if (!select || !customInput) return;
+
+  select.addEventListener('change', () => {
+    if (select.value === 'CUSTOM') {
+      customInput.style.display = 'block';
+      customInput.value = '';
+      customInput.focus();
+    } else {
+      customInput.style.display = 'none';
+      customInput.value = select.value;
+    }
+  });
+}
+
+// -------------------------------------------------------------
+// 4. TEACHER SEARCH & AUTOFILL FROM HEMIS (1-BO'LIM)
 // -------------------------------------------------------------
 function setupTeacherSearchAutofill() {
   const searchInput = document.getElementById('hemisTeacherSearchInput');
@@ -168,7 +257,9 @@ function setupTeacherSearchAutofill() {
           resultsBox.innerHTML = `
             <div style="padding: 12px; font-size: 12px; color: #64748b; text-align: center;">
               HEMIS da "${escapeHtml(val)}" bo‘yicha o‘qituvchi topilmadi.<br>
-              <small>Quyidagi maydonlarni qo'lda kiritishingiz mumkin.</small>
+              <button type="button" class="btn btn-light btn-sm" style="margin-top: 6px;" onclick="goToTeacherPane('pane-manual')">
+                <i class="fa fa-pen"></i> 2-bo'limga o'tib qo'lda kiritish
+              </button>
             </div>
           `;
           return;
@@ -192,7 +283,6 @@ function setupTeacherSearchAutofill() {
     }, 250);
   });
 
-  // Close search dropdown on click outside
   document.addEventListener('click', (e) => {
     if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
       resultsBox.style.display = 'none';
@@ -200,31 +290,76 @@ function setupTeacherSearchAutofill() {
   });
 }
 
-// Function called when a teacher item is clicked from search
 window.selectHemisTeacher = function(t) {
+  // Populate Manual fields
   document.getElementById('teacherHemisIdInput').value = t.hemis_id || '';
   document.getElementById('teacherNameInput').value = t.full_name || '';
-  document.getElementById('teacherDeptInput').value = t.department || '';
   document.getElementById('teacherPhoneInput').value = t.phone || '';
+
+  // Select Department in menu
+  const deptSelect = document.getElementById('teacherDeptSelect');
+  const customInput = document.getElementById('teacherDeptInput');
+  let foundOption = false;
+
+  if (deptSelect) {
+    for (let i = 0; i < deptSelect.options.length; i++) {
+      if (deptSelect.options[i].value.toLowerCase() === (t.department || '').toLowerCase()) {
+        deptSelect.selectedIndex = i;
+        foundOption = true;
+        break;
+      }
+    }
+
+    if (!foundOption) {
+      deptSelect.value = 'CUSTOM';
+      if (customInput) {
+        customInput.style.display = 'block';
+        customInput.value = t.department || '';
+      }
+    } else {
+      if (customInput) {
+        customInput.style.display = 'none';
+        customInput.value = t.department || '';
+      }
+    }
+  }
+
+  // Update Bot Invite Link with teacher HEMIS ID
+  const botUsername = state.settings.telegram_bot_username?.replace('@', '') || 'hemis_davomat_bot';
+  const inviteLinkInput = document.getElementById('teacherBotInviteLink');
+  if (inviteLinkInput) {
+    inviteLinkInput.value = `https://t.me/${botUsername}?start=${t.hemis_id || 'teacher'}`;
+  }
 
   // Hide search dropdown
   const resultsBox = document.getElementById('hemisSearchResults');
   if (resultsBox) resultsBox.style.display = 'none';
 
-  // Clear search input
-  const searchInput = document.getElementById('hemisTeacherSearchInput');
-  if (searchInput) searchInput.value = t.full_name;
+  // Show Teacher preview card in 1-bo'lim
+  const previewBox = document.getElementById('selectedTeacherPreview');
+  const previewName = document.getElementById('previewTeacherName');
+  const previewDetails = document.getElementById('previewTeacherDetails');
 
-  // Show success alert
-  const alertEl = document.getElementById('autofillSuccessAlert');
-  if (alertEl) {
-    alertEl.style.display = 'block';
+  if (previewBox && previewName && previewDetails) {
+    previewName.textContent = t.full_name;
+    previewDetails.innerHTML = `<strong>HEMIS ID:</strong> ${t.hemis_id} &bull; <strong>Kafedra:</strong> ${t.department} &bull; <strong>Tel:</strong> ${t.phone || 'Ko‘rsatilmagan'}`;
+    previewBox.style.display = 'block';
   }
 
-  // Focus Telegram username for fast completion
-  document.getElementById('teacherTelegramUsernameInput')?.focus();
+  showToast(`✅ "${t.full_name}" ma'lumotlari to'liq yuklandi!`, 'success');
+};
 
-  showToast(`"${t.full_name}" ma'lumotlari HEMIS tizimidan avtomatik to'ldirildi!`, 'success');
+window.copyBotInviteLink = function() {
+  const linkInput = document.getElementById('teacherBotInviteLink');
+  if (linkInput) {
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+      showToast('Bot havolasi nusxalandi! Ushbu havolani o‘qituvchiga yuborishingiz mumkin.', 'success');
+    }).catch(() => {
+      linkInput.select();
+      document.execCommand('copy');
+      showToast('Bot havolasi nusxalandi!', 'success');
+    });
+  }
 };
 
 function updateLiveClock() {
@@ -244,7 +379,6 @@ function setupNavigation() {
       const tabName = item.getAttribute('data-tab');
       switchTab(tabName);
 
-      // On mobile, close sidebar after clicking
       if (window.innerWidth <= 900) {
         document.body.classList.remove('sidebar-open');
       }
@@ -255,7 +389,6 @@ function setupNavigation() {
 function switchTab(tabName) {
   state.activeTab = tabName;
 
-  // Update sidebar active class
   document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
     if (item.getAttribute('data-tab') === tabName) {
       item.classList.add('active');
@@ -264,7 +397,6 @@ function switchTab(tabName) {
     }
   });
 
-  // Update tab visibility
   document.querySelectorAll('.tab-content').forEach(tab => {
     tab.classList.remove('active');
   });
@@ -274,7 +406,6 @@ function switchTab(tabName) {
     targetTab.classList.add('active');
   }
 
-  // Update breadcrumb
   const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
   if (breadcrumbCurrent) {
     const titles = {
@@ -289,10 +420,8 @@ function switchTab(tabName) {
 }
 
 function setupEventListeners() {
-  // Check now button
   document.getElementById('btnCheckNow')?.addEventListener('click', runCheckNow);
 
-  // Status and Department filters
   document.getElementById('statusFilter')?.addEventListener('change', (e) => {
     state.filters.status = e.target.value;
     loadLessons();
@@ -308,16 +437,9 @@ function setupEventListeners() {
     loadLessons();
   });
 
-  // Settings form submission
   document.getElementById('settingsForm')?.addEventListener('submit', saveSettings);
-
-  // Test Telegram button
   document.getElementById('btnTestTelegram')?.addEventListener('click', testTelegramBot);
-
-  // Test HEMIS API button
   document.getElementById('btnTestHemis')?.addEventListener('click', testHemisApi);
-
-  // Add Teacher Modal
   document.getElementById('btnAddTeacherModal')?.addEventListener('click', () => openTeacherModal());
   document.getElementById('teacherForm')?.addEventListener('submit', saveTeacher);
 }
@@ -325,7 +447,6 @@ function setupEventListeners() {
 // -------------------------------------------------------------
 // DATA LOADING
 // -------------------------------------------------------------
-
 async function loadAllData(showLoader = true) {
   await Promise.all([
     loadStats(),
@@ -342,7 +463,6 @@ async function loadStats() {
     const data = await res.json();
     state.stats = data;
 
-    // Update DOM counters
     document.getElementById('statTotalLessons').textContent = data.totalLessons || 0;
     document.getElementById('statCompleted').textContent = data.completedLessons || 0;
     document.getElementById('statIncomplete').textContent = data.incompleteLessons || 0;
@@ -350,14 +470,12 @@ async function loadStats() {
     document.getElementById('statResolved').textContent = data.resolvedAfterWarning || 0;
     document.getElementById('statStillPending').textContent = data.stillPending || 0;
 
-    // Header notification badge
     const headerBadge = document.getElementById('headerAlertBadge');
     if (headerBadge) {
       headerBadge.textContent = data.stillPending || 0;
       headerBadge.style.display = data.stillPending > 0 ? 'inline-block' : 'none';
     }
 
-    // Sidebar warning badge
     const menuBadge = document.getElementById('menuWarningBadge');
     if (menuBadge) {
       menuBadge.textContent = data.incompleteLessons || 0;
@@ -565,7 +683,6 @@ async function loadSettings() {
     const settings = await res.json();
     state.settings = settings;
 
-    // Fill settings inputs
     const setVal = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.value = val || '';
@@ -600,8 +717,6 @@ async function loadSettings() {
 // -------------------------------------------------------------
 // USER ACTIONS
 // -------------------------------------------------------------
-
-// Run Full Check & Notification
 async function runCheckNow() {
   const btn = document.getElementById('btnCheckNow');
   const originalText = btn.innerHTML;
@@ -626,7 +741,6 @@ async function runCheckNow() {
   }
 }
 
-// Send single alert to a teacher
 async function sendSingleAlert(lessonId) {
   try {
     const res = await fetch(`/api/notify-single/${lessonId}`, { method: 'POST' });
@@ -642,7 +756,6 @@ async function sendSingleAlert(lessonId) {
   }
 }
 
-// Quick complete attendance (Simulation of teacher finishing davomat)
 async function quickCompleteLesson(lessonId) {
   try {
     const res = await fetch('/api/simulate-attendance', {
@@ -660,7 +773,6 @@ async function quickCompleteLesson(lessonId) {
   }
 }
 
-// Quick reset attendance back to NOT_TAKEN
 async function quickResetLesson(lessonId) {
   try {
     const res = await fetch('/api/simulate-attendance', {
@@ -678,7 +790,6 @@ async function quickResetLesson(lessonId) {
   }
 }
 
-// View Message Preview
 function viewMessagePreview(lessonId) {
   const lesson = state.lessons.find(l => l.id === lessonId);
   if (!lesson) return;
@@ -710,7 +821,6 @@ function closeMessagePreview() {
   document.getElementById('messagePreviewModal').style.display = 'none';
 }
 
-// Save Settings
 async function saveSettings(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSaveSettings');
@@ -745,7 +855,6 @@ async function saveSettings(e) {
   }
 }
 
-// Test Telegram Bot
 async function testTelegramBot() {
   const token = document.getElementById('telegramBotTokenInput').value;
   const testChatId = document.getElementById('testTelegramChatIdInput')?.value;
@@ -784,7 +893,6 @@ async function testTelegramBot() {
   }
 }
 
-// Test HEMIS API
 async function testHemisApi() {
   const apiUrl = document.getElementById('hemisApiUrlInput').value;
   const apiToken = document.getElementById('hemisApiTokenInput').value;
@@ -820,40 +928,65 @@ async function testHemisApi() {
 }
 
 // -------------------------------------------------------------
-// TEACHER MODAL & AUTOFILL
+// TEACHER MODAL OPEN & SAVE
 // -------------------------------------------------------------
 function openTeacherModal(teacher = null) {
   const modal = document.getElementById('teacherModal');
   const form = document.getElementById('teacherForm');
   form.reset();
 
-  const searchBox = document.getElementById('hemisQuickSearchBox');
+  const previewBox = document.getElementById('selectedTeacherPreview');
   const searchInput = document.getElementById('hemisTeacherSearchInput');
   const resultsBox = document.getElementById('hemisSearchResults');
-  const alertEl = document.getElementById('autofillSuccessAlert');
+  const customDeptInput = document.getElementById('teacherDeptInput');
+  const deptSelect = document.getElementById('teacherDeptSelect');
 
+  if (previewBox) previewBox.style.display = 'none';
   if (resultsBox) resultsBox.style.display = 'none';
-  if (alertEl) alertEl.style.display = 'none';
+  if (customDeptInput) customDeptInput.style.display = 'none';
 
   if (teacher) {
-    document.getElementById('teacherModalTitle').textContent = "O'qituvchini tahrirlash";
+    document.getElementById('teacherModalTitle').innerHTML = "<i class=\"fa fa-user-edit\"></i> O'qituvchini tahrirlash";
     document.getElementById('teacherIdInput').value = teacher.id;
     document.getElementById('teacherHemisIdInput').value = teacher.hemis_id;
     document.getElementById('teacherNameInput').value = teacher.full_name;
-    document.getElementById('teacherDeptInput').value = teacher.department;
     document.getElementById('teacherPhoneInput').value = teacher.phone || '';
     document.getElementById('teacherChatIdInput').value = teacher.telegram_chat_id || '';
     document.getElementById('teacherTelegramUsernameInput').value = teacher.telegram_username || '';
-    
-    // In edit mode, hide quick search box
-    if (searchBox) searchBox.style.display = 'none';
+
+    // Set Department
+    let foundOption = false;
+    if (deptSelect) {
+      for (let i = 0; i < deptSelect.options.length; i++) {
+        if (deptSelect.options[i].value.toLowerCase() === (teacher.department || '').toLowerCase()) {
+          deptSelect.selectedIndex = i;
+          foundOption = true;
+          break;
+        }
+      }
+      if (!foundOption) {
+        deptSelect.value = 'CUSTOM';
+        if (customDeptInput) {
+          customDeptInput.style.display = 'block';
+          customDeptInput.value = teacher.department || '';
+        }
+      } else {
+        if (customDeptInput) customDeptInput.value = teacher.department || '';
+      }
+    }
+
+    // Go directly to 2-bo'lim (Qo'lda kiritish) when editing
+    goToTeacherPane('pane-manual');
   } else {
-    document.getElementById('teacherModalTitle').textContent = "Yangi o'qituvchi qo'shish (HEMIS dan)";
+    document.getElementById('teacherModalTitle').innerHTML = "<i class=\"fa fa-user-plus\"></i> Yangi o'qituvchi qo'shish va bog'lash";
     document.getElementById('teacherIdInput').value = '';
     document.getElementById('teacherHemisIdInput').value = '';
-    
-    // In add mode, show quick search box and focus it!
-    if (searchBox) searchBox.style.display = 'block';
+    if (deptSelect) deptSelect.value = 'Dasturiy injiniring';
+    if (customDeptInput) customDeptInput.value = 'Dasturiy injiniring';
+
+    // Start with 1-bo'lim (HEMIS avtomatik)
+    goToTeacherPane('pane-hemis');
+
     if (searchInput) {
       searchInput.value = '';
       setTimeout(() => searchInput.focus(), 150);
@@ -874,15 +1007,28 @@ function editTeacher(id) {
 
 async function saveTeacher(e) {
   e.preventDefault();
+
+  const deptSelectVal = document.getElementById('teacherDeptSelect')?.value;
+  const customDeptVal = document.getElementById('teacherDeptInput')?.value?.trim();
+  const finalDepartment = (deptSelectVal === 'CUSTOM' || !deptSelectVal)
+    ? (customDeptVal || 'Kafedra')
+    : deptSelectVal;
+
   const payload = {
     id: document.getElementById('teacherIdInput').value || null,
-    hemis_id: document.getElementById('teacherHemisIdInput').value,
-    full_name: document.getElementById('teacherNameInput').value,
-    department: document.getElementById('teacherDeptInput').value,
-    phone: document.getElementById('teacherPhoneInput').value,
-    telegram_chat_id: document.getElementById('teacherChatIdInput').value,
-    telegram_username: document.getElementById('teacherTelegramUsernameInput').value
+    hemis_id: document.getElementById('teacherHemisIdInput').value.trim(),
+    full_name: document.getElementById('teacherNameInput').value.trim(),
+    department: finalDepartment,
+    phone: document.getElementById('teacherPhoneInput').value.trim(),
+    telegram_chat_id: document.getElementById('teacherChatIdInput').value.trim(),
+    telegram_username: document.getElementById('teacherTelegramUsernameInput').value.trim()
   };
+
+  if (!payload.hemis_id || !payload.full_name) {
+    showToast('Iltimos, HEMIS ID va F.I.SH maydonlarini to\'ldiring (2-bo\'lim)', 'warning');
+    goToTeacherPane('pane-manual');
+    return;
+  }
 
   try {
     const res = await fetch('/api/teachers', {
@@ -903,7 +1049,6 @@ async function saveTeacher(e) {
   }
 }
 
-// Test message to teacher
 async function testTeacherAlert(chatId, teacherName) {
   const message = `🔔 <b>HEMIS TEST XABARNOMASI</b>\n\nHurmatli <b>${teacherName}</b>!\nBu tizim sizning Telegramingizga muvaffaqiyatli bog'langanligini tasdiqlovchi test xabaridir.`;
   try {
@@ -927,7 +1072,6 @@ async function testTeacherAlert(chatId, teacherName) {
   }
 }
 
-// Interactive Simulation Tab Action
 async function simulateScenario(type) {
   const lessonId = document.getElementById('simLessonSelect').value;
   if (!lessonId) {
@@ -957,10 +1101,6 @@ async function simulateScenario(type) {
 
   await loadAllData();
 }
-
-// -------------------------------------------------------------
-// UTILITIES
-// -------------------------------------------------------------
 
 function escapeHtml(text) {
   if (!text) return '';
