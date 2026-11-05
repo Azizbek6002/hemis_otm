@@ -8,6 +8,14 @@ const db = new DatabaseSync(dbPath);
 // Enable foreign keys and WAL mode
 db.exec('PRAGMA foreign_keys = ON;');
 
+function getTodayString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
@@ -45,7 +53,7 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS lessons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      hemis_schedule_id TEXT UNIQUE,
+      hemis_schedule_id TEXT,
       date TEXT NOT NULL,
       pair_number INTEGER NOT NULL,
       pair_time TEXT NOT NULL,
@@ -84,23 +92,13 @@ function initDatabase() {
     );
   `);
 
-  seedInitialData();
+  seedBaseData();
+  ensureTodaySchedule();
 }
 
-function getTodayString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function seedInitialData() {
-  // Check if teachers exist
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM teachers').get();
-  if (countRow && countRow.count > 0) {
-    return;
-  }
+function seedBaseData() {
+  const teacherCount = db.prepare('SELECT COUNT(*) as count FROM teachers').get()?.count || 0;
+  if (teacherCount > 0) return;
 
   // Insert default settings
   const insertSetting = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
@@ -110,9 +108,9 @@ function seedInitialData() {
   insertSetting.run('telegram_bot_username', 'hemis_davomat_bot');
   insertSetting.run('auto_check_enabled', '1');
   insertSetting.run('auto_check_interval_mins', '15');
-  insertSetting.run('mock_mode', '1'); // 1 = Mock simulation, 0 = Real HEMIS API
+  insertSetting.run('mock_mode', '1');
 
-  // Insert Teachers (realistic names from Uzbekistan universities)
+  // Insert Teachers
   const insertTeacher = db.prepare(`
     INSERT INTO teachers (hemis_id, full_name, department, faculty, phone, telegram_chat_id, telegram_username)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -131,7 +129,7 @@ function seedInitialData() {
     insertTeacher.run(...t);
   }
 
-  // Insert Groups (as in the screenshot: 657-24 DIr etc.)
+  // Insert Groups
   const insertGroup = db.prepare(`
     INSERT INTO groups (hemis_group_id, name, faculty, course, student_count)
     VALUES (?, ?, ?, ?, ?)
@@ -149,7 +147,7 @@ function seedInitialData() {
     insertGroup.run(...g);
   }
 
-  // Insert Subjects (from screenshots: Operatsion tizimlar, Algoritmlarni loyihalash, etc.)
+  // Insert Subjects
   const insertSubject = db.prepare(`INSERT INTO subjects (code, name) VALUES (?, ?)`);
   const subjectsData = [
     ['CS-301', 'Operatsion tizimlar'],
@@ -163,53 +161,63 @@ function seedInitialData() {
   for (const s of subjectsData) {
     insertSubject.run(...s);
   }
+}
 
-  // Insert Today's Lessons with realistic distribution
+// Har doim bugungi kun uchun dars jadvali bo'lishini ta'minlash
+function ensureTodaySchedule() {
   const today = getTodayString();
+  const todayCount = db.prepare('SELECT COUNT(*) as count FROM lessons WHERE date = ?').get(today)?.count || 0;
+  
+  if (todayCount > 0) return;
+
   const insertLesson = db.prepare(`
     INSERT INTO lessons (hemis_schedule_id, date, pair_number, pair_time, teacher_id, group_id, subject_id, room, attendance_status, total_students, marked_students)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  // Lesson 1: Abdunazarov A. S. - 657-24 DIr - Operatsion tizimlar - NOT_TAKEN!
-  insertLesson.run('SCH-101', today, 1, '08:30 - 09:50', 1, 1, 1, '304-xona', 'NOT_TAKEN', 26, 0);
+  // Lesson 1: Abdunazarov A. S. - 657-24 DIr - Operatsion tizimlar - NOT_TAKEN
+  insertLesson.run(`SCH-${today}-101`, today, 1, '08:30 - 09:50', 1, 1, 1, '304-xona', 'NOT_TAKEN', 26, 0);
 
   // Lesson 2: Karimov Bobur - 650-22 DIr - Kompyuter qurilmalari - COMPLETED
-  insertLesson.run('SCH-102', today, 1, '08:30 - 09:50', 2, 2, 5, '210-xona', 'COMPLETED', 24, 24);
+  insertLesson.run(`SCH-${today}-102`, today, 1, '08:30 - 09:50', 2, 2, 5, '210-xona', 'COMPLETED', 24, 24);
 
-  // Lesson 3: Rahimova Nargiza - 612-23 AT - Dasturiy injeneringga kirish - PARTIAL (e.g. only 10 marked out of 28)
-  insertLesson.run('SCH-103', today, 2, '10:00 - 11:20', 3, 3, 2, '401-xona', 'PARTIAL', 28, 10);
+  // Lesson 3: Rahimova Nargiza - 612-23 AT - Dasturiy injeneringga kirish - PARTIAL (10/28)
+  insertLesson.run(`SCH-${today}-103`, today, 2, '10:00 - 11:20', 3, 3, 2, '401-xona', 'PARTIAL', 28, 10);
 
-  // Lesson 4: Saidov Dilshod - 657-24 DIr - Algoritmlarni loyihalash - NOT_TAKEN!
-  insertLesson.run('SCH-104', today, 2, '10:00 - 11:20', 4, 1, 3, '305-xona', 'NOT_TAKEN', 26, 0);
+  // Lesson 4: Saidov Dilshod - 657-24 DIr - Algoritmlarni loyihalash - NOT_TAKEN
+  insertLesson.run(`SCH-${today}-104`, today, 2, '10:00 - 11:20', 4, 1, 3, '305-xona', 'NOT_TAKEN', 26, 0);
 
   // Lesson 5: Toshmatov Jamshid - 601-21 DIr - FrontEnd da ilovalar yaratish - COMPLETED
-  insertLesson.run('SCH-105', today, 3, '11:30 - 12:50', 5, 4, 4, '102-lab', 'COMPLETED', 30, 30);
+  insertLesson.run(`SCH-${today}-105`, today, 3, '11:30 - 12:50', 5, 4, 4, '102-lab', 'COMPLETED', 30, 30);
 
-  // Lesson 6: Xoliqova Feruza - 645-24 KI - Ma’rifat darsi - NOT_TAKEN!
-  insertLesson.run('SCH-106', today, 3, '11:30 - 12:50', 6, 5, 6, 'Faollar zali', 'NOT_TAKEN', 25, 0);
+  // Lesson 6: Xoliqova Feruza - 645-24 KI - Ma’rifat darsi - NOT_TAKEN
+  insertLesson.run(`SCH-${today}-106`, today, 3, '11:30 - 12:50', 6, 5, 6, 'Faollar zali', 'NOT_TAKEN', 25, 0);
 
   // Add initial notification record for demonstration so Super Admin immediately sees the workflow
-  const insertNotification = db.prepare(`
-    INSERT INTO notifications (lesson_id, teacher_id, message, status, resolved, reminder_count)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
+  const firstLesson = db.prepare('SELECT id FROM lessons WHERE date = ? AND teacher_id = 1 LIMIT 1').get(today);
+  if (firstLesson) {
+    db.prepare(`
+      INSERT INTO notifications (lesson_id, teacher_id, message, status, resolved, reminder_count)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      firstLesson.id,
+      1,
+      "HEMIS OGOHLANTIRISH: Abdunazarov A. S., 1-juftlik (08:30-09:50) da 657-24 DIr guruhida 'Operatsion tizimlar' fanidan davomat olinmagan (0/26)!",
+      'SENT',
+      0,
+      1
+    );
+  }
 
-  insertNotification.run(
-    1,
-    1,
-    "HEMIS OGOHLANTIRISH: Abdunazarov A. S., 1-juftlik (08:30-09:50) da 657-24 DIr guruhida 'Operatsion tizimlar' fanidan davomat olinmagan (0/26)!",
-    'SENT',
-    0,
-    1
+  db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+    'SCHEDULE_GENERATED',
+    `Bugungi sana (${today}) uchun dars jadvali yaratildi.`
   );
-
-  const insertAudit = db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)');
-  insertAudit.run('SYSTEM_INIT', 'Tizim ma’lumotlar bazasi va dastlabki dars jadvali yaratildi.');
 }
 
 module.exports = {
   db,
   initDatabase,
+  ensureTodaySchedule,
   getTodayString
 };
