@@ -303,6 +303,29 @@ router.post('/simulate-attendance', (req, res) => {
   }
 });
 
+// 9.5 VERIFY API PASSWORD (PROTECTED SECTION)
+const API_ACCESS_PASSWORD = process.env.API_ACCESS_PASSWORD || '6aa181JTI74s8r';
+
+router.post('/verify-api-password', (req, res) => {
+  const { password } = req.body;
+  if (password === API_ACCESS_PASSWORD) {
+    return res.json({
+      success: true,
+      message: "Parol muvaffaqiyatli tasdiqlandi! API sozlamalari ochildi."
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: "Xavfsizlik paroli noto‘g‘ri kiritildi! Parolni olish uchun texnik ma'sullarga murojaat qiling.",
+    contact: {
+      role: "Texnik ma'sul",
+      name: "Turaqulov Ilhomjon",
+      phone: "+998 95 755 22 18"
+    }
+  });
+});
+
 // 10. GET SETTINGS
 router.get('/settings', (req, res) => {
   try {

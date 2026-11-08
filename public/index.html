@@ -93,10 +93,11 @@
           <span class="menu-badge blue"><i class="fa fa-history"></i></span>
         </li>
         
-        <li class="menu-category">Integratsiya va Sozlamalar</li>
-        <li class="menu-item" data-tab="settings">
-          <i class="fa fa-sliders-h"></i>
-          <span>HEMIS API & Bot</span>
+        <li class="menu-category">Sozlamalar va Xavfsizlik</li>
+        <li class="menu-item" data-tab="settings" id="menuItemApiSettings">
+          <i class="fa fa-lock" style="color: #f59e0b;"></i>
+          <span>API Sozlamalari</span>
+          <span class="menu-badge" style="background: #ef4444; font-size: 10px;">Parolli</span>
         </li>
         <li class="menu-item" data-tab="simulation">
           <i class="fa fa-play-circle"></i>
@@ -370,32 +371,42 @@
         </div>
       </div>
 
-      <!-- TAB 4: HEMIS API & BOT SOZLAMALARI -->
+      <!-- TAB 4: HEMIS API & BOT SOZLAMALARI (HIMOYALANGAN) -->
       <div class="tab-content" id="tab-settings">
         <div class="section-box" style="max-width: 850px;">
-          <div class="section-header">
-            <span><i class="fa fa-cogs"></i> HEMIS Tizimi va Telegram Bot Integratsiya Sozlamalari</span>
+          <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa fa-key" style="color: #f59e0b;"></i> HEMIS REST API va Integratsiya Sozlamalari</span>
+            <button type="button" class="btn btn-light btn-sm" onclick="lockApiSettings()" style="font-size: 11px; padding: 4px 10px;" title="Bo'limni qayta qulflash">
+              <i class="fa fa-lock"></i> Qayta qulflash
+            </button>
           </div>
           <div style="padding: 20px;">
             <form id="settingsForm">
               
-              <div style="background: #eff6ff; border-left: 4px solid var(--hemis-blue); padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; font-size: 12px; color: #1e3a8a;">
-                <strong><i class="fa fa-lightbulb"></i> Ma'lumot:</strong> HEMIS API tokenini ertaga taqdim etganingizda, uni to'g'ridan-to'g'ri quyidagi maydonga joylab "Saqlash" tugmasini bosing. Tizim avtomatik jonli HEMIS ga ulanadi!
+              <!-- USER REQUESTED EXACT BANNER -->
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 14px 18px; border-radius: 6px; margin-bottom: 22px; font-size: 13px; color: #166534; line-height: 1.6;">
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; color: #15803d;">
+                  <i class="fa fa-check-circle"></i> Haqiqiy OTM HEMIS REST API rejimi:
+                </div>
+                Universitet sizga API URL va Token berganda, ushbu bo'limga kirib:<br>
+                &bull; <strong>HEMIS API URL:</strong> masalan, <code>https://hemis.fstu.uz/rest/v1</code><br>
+                &bull; <strong>HEMIS API Token:</strong> Berilgan Bearer token kiritasiz va saqlaysiz.<br>
+                Tizim avtomatik ravishda haqiqiy HEMIS ga ulanadi. Hech qanday qayta kodlash yoki qayta o'rnatish talab qilinmaydi.
               </div>
 
               <div class="settings-group">
                 <label class="settings-label">HEMIS API Base URL:</label>
-                <input type="text" class="form-input" id="hemisApiUrlInput" style="width: 100%;" placeholder="Masalan: https://student.fstu.uz/rest/v1 yoki https://api.hemis.uz/v1">
-                <div class="settings-hint">Universitet HEMIS serverining API manzili</div>
+                <input type="text" class="form-input" id="hemisApiUrlInput" style="width: 100%;" placeholder="Masalan: https://hemis.fstu.uz/rest/v1 yoki http://localhost:4000/api">
+                <div class="settings-hint">Universitet HEMIS serverining API manzili (yoki lokal simulyator: http://localhost:4000/api)</div>
               </div>
 
               <div class="settings-group">
                 <label class="settings-label">HEMIS API Bearer Token:</label>
-                <input type="password" class="form-input" id="hemisApiTokenInput" style="width: 100%;" placeholder="HEMIS tizimidan beriladigan API kalit (Bearer token)">
-                <div class="settings-hint">Ertaga olinadigan haqiqiy HEMIS API tokeni shu yerga kiritiladi</div>
+                <input type="password" class="form-input" id="hemisApiTokenInput" style="width: 100%;" placeholder="HEMIS tizimidan beriladigan maxfiy API kalit (Bearer token)">
+                <div class="settings-hint">Universitet taqdim etadigan haqiqiy HEMIS API Bearer tokeni</div>
                 <div style="margin-top: 8px;">
                   <button type="button" class="btn btn-light btn-sm" id="btnTestHemis">
-                    <i class="fa fa-check"></i> HEMIS API ulanishini tekshirish
+                    <i class="fa fa-plug"></i> HEMIS API ulanishini tekshirish
                   </button>
                 </div>
               </div>
@@ -711,6 +722,70 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" onclick="closeMessagePreview()">Tushunarli</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: API PASSWORD VERIFICATION (PAROL HIMOYASI) -->
+  <div class="modal-overlay" id="apiPasswordModal" style="display: none;">
+    <div class="modal-card" style="max-width: 500px; border-radius: 8px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #fff; padding: 16px 20px;">
+        <span style="font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-shield-alt" style="color: #f59e0b;"></i> API Sozlamalari (Himoyalangan bo'lim)
+        </span>
+        <button class="modal-close" onclick="closeApiPasswordModal()" style="color: #fff; opacity: 0.85;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 22px;">
+        <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+          Ushbu bo'lim OTM HEMIS tizimining asosiy API konfiguratsiyasini o'z ichiga oladi. O'zgartirish kiritish uchun xavfsizlik parolini kiriting:
+        </p>
+
+        <form id="apiPasswordForm" onsubmit="event.preventDefault(); verifyApiPassword();">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+              <i class="fa fa-key" style="color: #3b82f6;"></i> Xavfsizlik paroli:
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="apiPasswordInput" class="form-input" style="width: 100%; padding-right: 40px; font-size: 14px; letter-spacing: 1px;" placeholder="Parolni kiriting..." autocomplete="off">
+              <button type="button" id="togglePasswordVisibilityBtn" onclick="toggleApiPasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="Parolni ko'rsatish/yashirish">
+                <i class="fa fa-eye" id="togglePasswordEyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Wrong password message box (User-requested design) -->
+          <div id="apiPasswordErrorContainer" style="display: none; margin-top: 14px;">
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 6px; padding: 14px;">
+              <div style="font-weight: 700; color: #dc2626; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa fa-exclamation-triangle"></i> Xavfsizlik paroli noto‘g‘ri kiritildi!
+              </div>
+              <div style="font-size: 12px; color: #4b5563; line-height: 1.5;">
+                Ushbu bo'lim faqat OTM texnik ma'sullari uchun himoyalangan.<br>
+                Parolni bilish va ruxsat olish uchun bizga murojaat qiling:
+              </div>
+              <div style="margin-top: 10px; padding: 10px 12px; background: #ffffff; border: 1px dashed #f87171; border-radius: 6px;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #991b1b; letter-spacing: 0.5px;">
+                  Texnik ma'sullar:
+                </div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e3a8a; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa fa-user-cog" style="color: #2563eb;"></i> Turaqulov Ilhomjon
+                </div>
+                <div style="font-size: 13px; margin-top: 5px; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa fa-phone-alt" style="color: #10b981;"></i> 
+                  <a href="tel:+998957552218" style="color: #0284c7; font-weight: 700; text-decoration: none; font-size: 14px;">+998 95 755 22 18</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-light" onclick="closeApiPasswordModal()">Bekor qilish</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmitApiPassword">
+              <i class="fa fa-unlock-alt"></i> Tasdiqlash & Kirish
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

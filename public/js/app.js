@@ -1,6 +1,7 @@
 // HEMIS Super Admin Attendance Monitoring Client Application
 
 const state = {
+  isApiUnlocked: sessionStorage.getItem('hemis_api_unlocked') === '1',
   activeTab: 'monitoring',
   activeTeacherPane: 'pane-hemis',
   stats: {},
@@ -31,6 +32,7 @@ async function initApp() {
   setupTeacherSearchAutofill();
   setupTeacherModalTabs();
   setupDepartmentSelect();
+  updateApiMenuLockState();
   updateLiveClock();
   setInterval(updateLiveClock, 1000);
 
@@ -387,6 +389,11 @@ function setupNavigation() {
 }
 
 function switchTab(tabName) {
+  if (tabName === 'settings' && !state.isApiUnlocked) {
+    openApiPasswordModal();
+    return;
+  }
+
   state.activeTab = tabName;
 
   document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
@@ -412,10 +419,115 @@ function switchTab(tabName) {
       monitoring: 'Davomat monitoringi va Ogohlantirishlar',
       teachers: "O'qituvchilar va Telegram bog'lanishlari",
       alerts: 'Telegram Xabarnomalar jurnali',
-      settings: 'HEMIS API va Bot sozlamalari',
+      settings: 'HEMIS API va Integratsiya Sozlamalari (Himoyalangan)',
       simulation: 'Interaktiv Simulyator (Jonli sinov)'
     };
     breadcrumbCurrent.textContent = titles[tabName] || tabName;
+  }
+}
+
+// -------------------------------------------------------------
+// 12. API PASSWORD SECURITY (Parol: 6aa181JTI74s8r)
+// -------------------------------------------------------------
+const API_SECRET_PASSWORD = "6aa181JTI74s8r";
+
+function openApiPasswordModal() {
+  const modal = document.getElementById('apiPasswordModal');
+  const input = document.getElementById('apiPasswordInput');
+  const errBox = document.getElementById('apiPasswordErrorContainer');
+
+  if (modal) modal.style.display = 'flex';
+  if (errBox) errBox.style.display = 'none';
+  if (input) {
+    input.value = '';
+    input.type = 'password';
+    input.style.borderColor = '#cbd5e1';
+    setTimeout(() => input.focus(), 150);
+  }
+  const eye = document.getElementById('togglePasswordEyeIcon');
+  if (eye) eye.className = 'fa fa-eye';
+}
+
+function closeApiPasswordModal() {
+  const modal = document.getElementById('apiPasswordModal');
+  if (modal) modal.style.display = 'none';
+  const errBox = document.getElementById('apiPasswordErrorContainer');
+  if (errBox) errBox.style.display = 'none';
+}
+
+function toggleApiPasswordVisibility() {
+  const input = document.getElementById('apiPasswordInput');
+  const eye = document.getElementById('togglePasswordEyeIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (eye) eye.className = 'fa fa-eye-slash';
+  } else {
+    input.type = 'password';
+    if (eye) eye.className = 'fa fa-eye';
+  }
+}
+
+async function verifyApiPassword() {
+  const input = document.getElementById('apiPasswordInput');
+  const errBox = document.getElementById('apiPasswordErrorContainer');
+  const enteredPassword = (input?.value || '').trim();
+
+  // Tekshirish (Server orqali yoki to'g'ridan-to'g'ri)
+  let isCorrect = (enteredPassword === API_SECRET_PASSWORD);
+
+  try {
+    const res = await fetch('/api/verify-api-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: enteredPassword })
+    });
+    if (res.ok) {
+      isCorrect = true;
+    } else {
+      isCorrect = false;
+    }
+  } catch (e) {
+    // Agar server aloqasi bo'lmasa, lokal parol bilan tekshiriladi
+  }
+
+  if (isCorrect) {
+    state.isApiUnlocked = true;
+    sessionStorage.setItem('hemis_api_unlocked', '1');
+    closeApiPasswordModal();
+    updateApiMenuLockState();
+    switchTab('settings');
+    showNotification('Xavfsizlik paroli tasdiqlandi! HEMIS API sozlamalari ochildi.', 'success');
+  } else {
+    if (errBox) errBox.style.display = 'block';
+    if (input) {
+      input.style.borderColor = '#ef4444';
+      input.focus();
+      input.select();
+    }
+  }
+}
+
+function lockApiSettings() {
+  state.isApiUnlocked = false;
+  sessionStorage.removeItem('hemis_api_unlocked');
+  updateApiMenuLockState();
+  switchTab('monitoring');
+  showNotification('API sozlamalari qayta qulflandi.', 'info');
+}
+
+function updateApiMenuLockState() {
+  const menuItem = document.getElementById('menuItemApiSettings');
+  if (!menuItem) return;
+  const icon = menuItem.querySelector('i');
+  const badge = menuItem.querySelector('.menu-badge');
+
+  if (state.isApiUnlocked) {
+    if (icon) { icon.className = 'fa fa-unlock'; icon.style.color = '#10b981'; }
+    if (badge) { badge.textContent = 'Ochiq'; badge.style.background = '#10b981'; }
+  } else {
+    if (icon) { icon.className = 'fa fa-lock'; icon.style.color = '#f59e0b'; }
+    if (badge) { badge.textContent = 'Parolli'; badge.style.background = '#ef4444'; }
   }
 }
 
