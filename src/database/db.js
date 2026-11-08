@@ -51,6 +51,15 @@ function initDatabase() {
       name TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS students (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      student_id_number TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      gender TEXT DEFAULT 'M',
+      FOREIGN KEY(group_id) REFERENCES groups(id)
+    );
+
     CREATE TABLE IF NOT EXISTS lessons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       hemis_schedule_id TEXT,
@@ -70,13 +79,24 @@ function initDatabase() {
       FOREIGN KEY(subject_id) REFERENCES subjects(id)
     );
 
+    CREATE TABLE IF NOT EXISTS lesson_attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lesson_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PRESENT', -- 'PRESENT', 'ABSENT', 'EXCUSED'
+      updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY(lesson_id) REFERENCES lessons(id),
+      FOREIGN KEY(student_id) REFERENCES students(id),
+      UNIQUE(lesson_id, student_id)
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       lesson_id INTEGER NOT NULL,
       teacher_id INTEGER NOT NULL,
       sent_at TEXT DEFAULT (datetime('now', 'localtime')),
       message TEXT NOT NULL,
-      status TEXT NOT NULL, -- 'SENT', 'FAILED', 'MOCK_SENT'
+      status TEXT NOT NULL, -- 'SENT', 'FAILED', 'MOCK_SENT', 'NO_CHAT_ID'
       resolved INTEGER DEFAULT 0, -- 0: still pending, 1: resolved after warning
       resolved_at TEXT,
       reminder_count INTEGER DEFAULT 1,
@@ -93,6 +113,7 @@ function initDatabase() {
   `);
 
   seedBaseData();
+  seedStudents();
   ensureTodaySchedule();
 }
 
@@ -163,6 +184,61 @@ function seedBaseData() {
   }
 }
 
+// Seed realistic students for each group
+function seedStudents() {
+  const studentCount = db.prepare('SELECT COUNT(*) as count FROM students').get()?.count || 0;
+  if (studentCount > 0) return;
+
+  const insertStudent = db.prepare(`
+    INSERT OR IGNORE INTO students (group_id, student_id_number, full_name, gender)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  // 26 Students for Group 1 (657-24 DIr)
+  const students657 = [
+    'Abdullayev Shohruh Baxtiyor o‘g‘li',
+    'Akromov Diyorbek Jamshid o‘g‘li',
+    'Aliyeva Mohinur Otabek qizi',
+    'Bozorov Sanjar Ulug‘bek o‘g‘li',
+    'Dadaxonov Asadbek Ilhom o‘g‘li',
+    'Ergashev Javohir Farhod o‘g‘li',
+    'G‘aniyev Bobur Sherzod o‘g‘li',
+    'Hamidova Sevinch Rustam qizi',
+    'Ismoilov Doniyor Akmal o‘g‘li',
+    'Jalolov Mirjalol Mansur o‘g‘li',
+    'Karimov Azizbek Shavkat o‘g‘li',
+    'Mamasharipov Temurbek Alisher o‘g‘li',
+    'Norqobilov Elbek Muzaffar o‘g‘li',
+    'Olimova Diyora Shuhrat qizi',
+    'Po‘latov Behruzbek Zafar o‘g‘li',
+    'Qodirov Sarvar Sobir o‘g‘li',
+    'Rahmonov Umidjon Husan o‘g‘li',
+    'Saidova Kamola Nodir qizi',
+    'Toshpo‘latov Anvar Ilhom o‘g‘li',
+    'Umarov Shahzod Sunnat o‘g‘li',
+    'Vohidov Shahriyor Jasur o‘g‘li',
+    'Xolmatov Dostonbek Dilshod o‘g‘li',
+    'Yoqubova Dilnavoz Baxtiyor qizi',
+    'Zokirov Javohirbek Erkin o‘g‘li',
+    'Sheraliyev Muhriddin Alisher o‘g‘li',
+    'Nasimov Kamoliddin Bahrom o‘g‘li'
+  ];
+
+  students657.forEach((name, idx) => {
+    const studentNum = `39124110${String(idx + 10).padStart(3, '0')}`;
+    insertStudent.run(1, studentNum, name, name.includes('qizi') ? 'F' : 'M');
+  });
+
+  // Students for other groups
+  const otherGroups = [2, 3, 4, 5];
+  for (const gId of otherGroups) {
+    for (let i = 1; i <= 24; i++) {
+      const num = `3919${gId}${String(i).padStart(4, '0')}`;
+      insertStudent.run(gId, num, `Talaba ${i} (Guruh #${gId})`, i % 3 === 0 ? 'F' : 'M');
+    }
+  }
+}
+
 // Har doim bugungi kun uchun dars jadvali bo'lishini ta'minlash
 function ensureTodaySchedule() {
   const today = getTodayString();
@@ -193,7 +269,7 @@ function ensureTodaySchedule() {
   // Lesson 6: Xoliqova Feruza - 645-24 KI - Ma’rifat darsi - NOT_TAKEN
   insertLesson.run(`SCH-${today}-106`, today, 3, '11:30 - 12:50', 6, 5, 6, 'Faollar zali', 'NOT_TAKEN', 25, 0);
 
-  // Add initial notification record for demonstration so Super Admin immediately sees the workflow
+  // Add initial notification record for demonstration
   const firstLesson = db.prepare('SELECT id FROM lessons WHERE date = ? AND teacher_id = 1 LIMIT 1').get(today);
   if (firstLesson) {
     db.prepare(`

@@ -22,7 +22,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api', apiRoutes);
 
-// Fallback to index.html for SPA
+// Teacher Portal Route
+app.get('/teacher', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'teacher.html'));
+});
+
+// Fallback to index.html for Super Admin Dashboard
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

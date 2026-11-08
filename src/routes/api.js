@@ -405,4 +405,191 @@ router.get('/audit-logs', (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// TEACHER PORTAL API ENDPOINTS
+// -------------------------------------------------------------
+
+// T-1. GET TEACHER PROFILE
+router.get('/teacher/profile', (req, res) => {
+  try {
+    const teacherId = req.query.teacher_id || 1;
+    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ error: "O'qituvchi topilmadi" });
+    }
+    const teachersList = db.prepare('SELECT id, full_name, hemis_id, department FROM teachers WHERE is_active = 1 ORDER BY full_name ASC').all();
+    res.json({ teacher, teachersList });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// T-2. GET TEACHER TODAY'S LESSONS
+router.get('/teacher/lessons', (req, res) => {
+  try {
+    const teacherId = req.query.teacher_id || 1;
+    const today = req.query.date || new Date().toISOString().split('T')[0];
+
+    const lessons = db.prepare(`
+      SELECT 
+        l.id, l.hemis_schedule_id, l.date, l.pair_number, l.pair_time, l.room,
+        l.attendance_status, l.total_students, l.marked_students, l.updated_at,
+        g.name as group_name, g.id as group_id, g.course,
+        s.name as subject_name, s.code as subject_code,
+        n.id as notification_id, n.sent_at as notified_at, n.status as notification_status,
+        n.resolved as is_resolved, n.resolved_at, n.reminder_count, n.message as notification_message
+      FROM lessons l
+      JOIN groups g ON l.group_id = g.id
+      JOIN subjects s ON l.subject_id = s.id
+      LEFT JOIN notifications n ON n.id = (
+        SELECT id FROM notifications 
+        WHERE lesson_id = l.id 
+        ORDER BY id DESC LIMIT 1
+      )
+      WHERE l.teacher_id = ? AND l.date = ?
+      ORDER BY l.pair_number ASC
+    `).all(teacherId, today);
+
+    res.json(lessons);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// T-3. GET STUDENTS FOR LESSON ATTENDANCE
+router.get('/teacher/lesson/:lessonId/students', (req, res) => {
+  try {
+    const lessonId = req.params.lessonId;
+    const lesson = db.prepare(`
+      SELECT l.*, g.name as group_name, s.name as subject_name, t.full_name as teacher_name
+      FROM lessons l
+      JOIN groups g ON l.group_id = g.id
+      JOIN subjects s ON l.subject_id = s.id
+      JOIN teachers t ON l.teacher_id = t.id
+      WHERE l.id = ?
+    `).get(lessonId);
+
+    if (!lesson) {
+      return res.status(404).json({ error: "Dars topilmadi" });
+    }
+
+    const students = db.prepare(`
+      SELECT 
+        s.id, s.student_id_number, s.full_name, s.gender,
+        coalesce(la.status, 'PRESENT') as attendance_status
+      FROM students s
+      LEFT JOIN lesson_attendance la ON la.student_id = s.id AND la.lesson_id = ?
+      WHERE s.group_id = ?
+      ORDER BY s.full_name ASC
+    `).all(lessonId, lesson.group_id);
+
+    res.json({ lesson, students });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// T-4. SAVE LESSON ATTENDANCE (YO'QLAMA TOPSHIRISH)
+router.post('/teacher/lesson/:lessonId/save-attendance', (req, res) => {
+  try {
+    const lessonId = req.params.lessonId;
+    const { records } = req.body;
+
+    if (!records || !Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ error: "Talabalar davomati yuborilmadi" });
+    }
+
+    const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(lessonId);
+    if (!lesson) {
+      return res.status(404).json({ error: "Dars topilmadi" });
+    }
+
+    const upsert = db.prepare(`
+      INSERT INTO lesson_attendance (lesson_id, student_id, status, updated_at)
+      VALUES (?, ?, ?, datetime('now', 'localtime'))
+      ON CONFLICT(lesson_id, student_id) DO UPDATE SET
+        status = excluded.status,
+        updated_at = datetime('now', 'localtime')
+    `);
+
+    let present = 0, absent = 0, excused = 0;
+    for (const r of records) {
+      upsert.run(lessonId, r.student_id, r.status);
+      if (r.status === 'PRESENT') present++;
+      else if (r.status === 'ABSENT') absent++;
+      else if (r.status === 'EXCUSED') excused++;
+    }
+
+    const totalMarked = records.length;
+    // Mark lesson as completed
+    db.prepare(`
+      UPDATE lessons 
+      SET attendance_status = 'COMPLETED', marked_students = total_students, updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `).run(lessonId);
+
+    // Resolve any pending warnings for this lesson
+    db.prepare(`
+      UPDATE notifications 
+      SET resolved = 1, resolved_at = datetime('now', 'localtime')
+      WHERE lesson_id = ? AND resolved = 0
+    `).run(lessonId);
+
+    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(lesson.teacher_id);
+    const group = db.prepare('SELECT name FROM groups WHERE id = ?').get(lesson.group_id);
+
+    db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
+      'TEACHER_ATTENDANCE_SUBMITTED',
+      `O'qituvchi ${teacher?.full_name || ''} ${group?.name || ''} guruhi uchun davomatni to'liq topshirdi (${present} bor, ${absent} sababsiz, ${excused} sababli). Ogohlantirish yopildi.`
+    );
+
+    res.json({
+      success: true,
+      message: "Davomat HEMIS tizimiga muvaffaqiyatli saqlandi! Ogohlantirish avtomatik 'To‘g‘irlandi' holatiga o‘tdi.",
+      stats: { totalMarked, present, absent, excused }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// T-5. TEACHER ATTENDANCE REPORT (Image 4 HEMIS format)
+router.get('/teacher/attendance-report', (req, res) => {
+  try {
+    const teacherId = req.query.teacher_id || 1;
+    const rows = db.prepare(`
+      SELECT 
+        s.name as subject_name,
+        g.name as group_name,
+        72 as aud_hours,
+        (SELECT COUNT(*) FROM lesson_attendance la JOIN lessons l2 ON la.lesson_id = l2.id WHERE l2.subject_id = s.id AND l2.teacher_id = ? AND la.status = 'EXCUSED') as sababli,
+        (SELECT COUNT(*) FROM lesson_attendance la JOIN lessons l2 ON la.lesson_id = l2.id WHERE l2.subject_id = s.id AND l2.teacher_id = ? AND la.status = 'ABSENT') as sababsiz
+      FROM lessons l
+      JOIN subjects s ON l.subject_id = s.id
+      JOIN groups g ON l.group_id = g.id
+      WHERE l.teacher_id = ?
+      GROUP BY s.id, g.id
+    `).all(teacherId, teacherId, teacherId);
+
+    const report = rows.map((r, i) => {
+      const jami = (r.sababli || 0) + (r.sababsiz || 0);
+      const foiz = ((jami / (r.aud_hours || 72)) * 100).toFixed(2);
+      return {
+        id: i + 1,
+        subject_name: r.subject_name,
+        group_name: r.group_name,
+        aud_hours: r.aud_hours,
+        sababli: r.sababli || 0,
+        sababsiz: r.sababsiz || 0,
+        jami,
+        foiz: `${foiz} %`
+      };
+    });
+
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

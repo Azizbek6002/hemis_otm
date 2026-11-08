@@ -1,3 +1,4 @@
 node_modules/
 *.log
 .DS_Store
+hemis_otm/node_modules/
