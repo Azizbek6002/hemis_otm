@@ -110,7 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePasswordEyeIcon = document.getElementById('togglePasswordEyeIcon');
 
   function openApiPasswordModal() {
-    if (apiPasswordModal) apiPasswordModal.style.display = 'flex';
+    if (!apiPasswordModal) return;
+    apiPasswordModal.classList.add('active');
     if (apiPasswordErrorContainer) apiPasswordErrorContainer.style.display = 'none';
     if (apiPasswordInput) {
       apiPasswordInput.value = '';
@@ -122,12 +123,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function closeApiPasswordModal() {
-    if (apiPasswordModal) apiPasswordModal.style.display = 'none';
+    if (!apiPasswordModal) return;
+    apiPasswordModal.classList.remove('active');
     if (apiPasswordErrorContainer) apiPasswordErrorContainer.style.display = 'none';
   }
 
   btnCloseApiPasswordModal?.addEventListener('click', closeApiPasswordModal);
   btnCancelApiPasswordModal?.addEventListener('click', closeApiPasswordModal);
+
+  apiPasswordModal?.addEventListener('click', (e) => {
+    if (e.target === apiPasswordModal) {
+      closeApiPasswordModal();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && apiPasswordModal?.classList.contains('active')) {
+      closeApiPasswordModal();
+    }
+  });
 
   togglePasswordVisibilityBtn?.addEventListener('click', () => {
     if (!apiPasswordInput) return;
@@ -140,22 +154,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const API_CORRECT_PASSWORD = "6aa181JTI74s8r";
+  const DEVELOPER_API_PASSWORD = "6aa181JTI74s8r";
 
   apiPasswordForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const entered = (apiPasswordInput?.value || '').trim();
 
-    let valid = (entered === API_CORRECT_PASSWORD);
+    let valid = (entered === DEVELOPER_API_PASSWORD);
     try {
       const res = await fetch('/api/admin/verify-api-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: entered })
       });
-      if (res.ok) valid = true;
-      else valid = false;
-    } catch (err) {}
+      valid = res.ok;
+    } catch (err) {
+      valid = (entered === DEVELOPER_API_PASSWORD);
+    }
 
     if (valid) {
       isApiUnlocked = true;
@@ -181,6 +196,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateApiLockBadge();
     activateTab('tab-teachers');
     showToast("🔒 API bo'limi qayta qulflandi.", "success");
+  });
+
+  // Bearer Token ko'rinishini almashtirish
+  const toggleTokenVisibilityBtn = document.getElementById('toggleTokenVisibilityBtn');
+  const toggleTokenEyeIcon = document.getElementById('toggleTokenEyeIcon');
+  const cfgHemisApiToken = document.getElementById('cfgHemisApiToken');
+
+  toggleTokenVisibilityBtn?.addEventListener('click', () => {
+    if (!cfgHemisApiToken) return;
+    if (cfgHemisApiToken.type === 'password') {
+      cfgHemisApiToken.type = 'text';
+      if (toggleTokenEyeIcon) toggleTokenEyeIcon.className = 'fa-solid fa-eye-slash';
+    } else {
+      cfgHemisApiToken.type = 'password';
+      if (toggleTokenEyeIcon) toggleTokenEyeIcon.className = 'fa-solid fa-eye';
+    }
   });
 
   // Load API config

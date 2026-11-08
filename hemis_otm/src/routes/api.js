@@ -440,13 +440,15 @@ router.post('/bot/add-teacher', async (req, res) => {
 });
 
 // ==========================================================================
-// SUPERADMIN: API INTEGRATSIYASI VA XAVFSIZLIK PAROLI (6aa181JTI74s8r)
+// SUPERADMIN: API INTEGRATSIYASI VA XAVFSIZLIK PAROLI (FAQAT DASTURCHILAR UCHUN)
 // ==========================================================================
-const API_ACCESS_PASSWORD = process.env.API_ACCESS_PASSWORD || "6aa181JTI74s8r";
+const DEVELOPER_API_PASSWORD = "6aa181JTI74s8r";
 
 router.post('/admin/verify-api-password', (req, res) => {
   const { password } = req.body;
-  if (password === API_ACCESS_PASSWORD) {
+  const p = (password || '').trim();
+
+  if (p === DEVELOPER_API_PASSWORD) {
     return res.json({
       success: true,
       message: "Parol muvaffaqiyatli tasdiqlandi! API bo'limi ochildi."
@@ -509,8 +511,9 @@ router.post('/admin/test-api-connection', async (req, res) => {
       headers['Authorization'] = `Bearer ${hemisApiToken}`;
     }
 
-    const testUrl = cleanUrl.includes('localhost') 
-      ? `${cleanUrl}/admin/overview` 
+    const isLocal = cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('10.58.91.229') || cleanUrl.endsWith(':4000/api') || cleanUrl.endsWith(':4000');
+    const testUrl = isLocal 
+      ? `${cleanUrl.replace(/\/api$/, '')}/api/admin/overview` 
       : `${cleanUrl}/data/employee-list?limit=1`;
 
     const response = await fetch(testUrl, { headers, signal: AbortSignal.timeout(6000) });

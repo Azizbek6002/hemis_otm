@@ -1961,10 +1961,5 @@
     "OS",
     "OS-zaochno",
     "SI"
-  ],
-  "apiConfig": {
-    "hemisApiUrl": "https://hemis.fstu.uz/rest/v1",
-    "hemisApiToken": "test_bearer_token",
-    "updatedAt": "08/11/2026, 11:45:15"
-  }
+  ]
 }
