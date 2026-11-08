@@ -6,8 +6,9 @@ const hemisService = require('../services/hemisService');
 const schedulerService = require('../services/schedulerService');
 
 // 1. STATS OVERVIEW (LOGIK TO'G'RILANDI)
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
+    await hemisService.syncFromHemis().catch(err => console.warn('Sync notice:', err.message));
     const today = req.query.date || new Date().toISOString().split('T')[0];
 
     const totalLessons = db.prepare('SELECT COUNT(*) as c FROM lessons WHERE date = ?').get(today)?.c || 0;
@@ -61,8 +62,9 @@ router.get('/stats', (req, res) => {
 });
 
 // 2. LESSONS LIST (LOGIK FILTERLAR TO'G'RILANDI)
-router.get('/lessons', (req, res) => {
+router.get('/lessons', async (req, res) => {
   try {
+    await hemisService.syncFromHemis().catch(err => console.warn('Sync notice:', err.message));
     const today = req.query.date || new Date().toISOString().split('T')[0];
     const status = req.query.status;
     const department = req.query.department;
@@ -262,8 +264,14 @@ router.delete('/teachers/:id', (req, res) => {
 // 7. RUN MANUAL CHECK & AUTO NOTIFY NOW (Manual = true)
 router.post('/check-now', async (req, res) => {
   try {
+    const syncRes = await hemisService.syncFromHemis().catch(err => ({ error: err.message }));
     const summary = await telegramService.checkAndAutoNotify(true);
-    res.json({ success: true, summary });
+    res.json({
+      success: true,
+      message: "HEMIS ma'lumotlari yangilandi va tekshiruv yakunlandi.",
+      sync: syncRes,
+      summary
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

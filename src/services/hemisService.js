@@ -1,21 +1,5 @@
 const { db } = require('../database/db');
 
-// University teachers mock catalog for quick autofill when live API is not yet loaded
-const MOCK_HEMIS_TEACHERS_CATALOG = [
-  { hemis_id: 'T-10291', full_name: 'Abdunazarov Abdurashid Saidorifovich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998901234567' },
-  { hemis_id: 'T-10292', full_name: 'Karimov Bobur Mansurovich', department: 'Axborot xavfsizligi', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998912345678' },
-  { hemis_id: 'T-10293', full_name: 'Rahimova Nargiza Omonovna', department: 'Sun’iy intellekt', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998933456789' },
-  { hemis_id: 'T-10294', full_name: 'Saidov Dilshod Rustamovich', department: 'Kompyuter tizimlari', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998944567890' },
-  { hemis_id: 'T-10295', full_name: 'Toshmatov Jamshid Ergashovich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998975678901' },
-  { hemis_id: 'T-10296', full_name: 'Xoliqova Feruza Baxtiyorovna', department: 'Ijtimoiy gumanitar fanlar', faculty: 'Gumanitar fakulteti', phone: '+998996789012' },
-  { hemis_id: 'T-10297', full_name: 'Aliyev Jasur Mirzayevich', department: 'Dasturiy injiniring', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998905551122' },
-  { hemis_id: 'T-10298', full_name: 'Normatov Sherzod Otabekovich', department: 'Axborot xavfsizligi', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998916662233' },
-  { hemis_id: 'T-10299', full_name: 'Yusupova Malika Ikromovna', department: 'Sun’iy intellekt', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998937773344' },
-  { hemis_id: 'T-10300', full_name: 'Mirzayev Farhod Qodirovich', department: 'Kompyuter tizimlari', faculty: 'Axborot texnologiyalari fakulteti', phone: '+998948884455' },
-  { hemis_id: 'T-10301', full_name: 'Qosimova Shahnoza Anvarovna', department: 'Xorijiy tillar', faculty: 'Gumanitar fakulteti', phone: '+998999995566' },
-  { hemis_id: 'T-10302', full_name: 'Beknazarov Otabek Shuxratovich', department: 'Oliy matematika', faculty: 'Tabiiy fanlar fakulteti', phone: '+998901117788' }
-];
-
 class HemisService {
   getSetting(key) {
     const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
@@ -26,26 +10,199 @@ class HemisService {
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
   }
 
+  getHemisApiUrl() {
+    return this.getSetting('hemis_api_url') || 'http://localhost:4000/api';
+  }
+
   isMockMode() {
     return this.getSetting('mock_mode') === '1';
   }
 
+  /**
+   * HEMIS Tizimidan (http://localhost:4000/api yoki real HEMIS API)
+   * o'qituvchilar va kunlik darslar ro'yxatini to'liq sinxronizatsiya qilish
+   */
+  async syncFromHemis() {
+    const apiUrl = this.getHemisApiUrl().replace(/\/+$/, '');
+    
+    try {
+      const res = await fetch(`${apiUrl}/admin/overview`, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
+
+      if (!res.ok) {
+        throw new Error(`HEMIS API javob bermadi: HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error("HEMIS API dan muvaffaqiyatli javob olinmadi");
+      }
+
+      // 1. O'qituvchilarni sinxronizatsiya qilish
+      if (Array.isArray(data.teachers)) {
+        for (const t of data.teachers) {
+          const hemisId = String(t.hemisId || `T-${t.id}`);
+          const fullName = t.fullName || t.name;
+          const dept = t.department || 'Kafedra';
+          const phone = t.phone || '';
+          const chatId = t.chatId ? String(t.chatId) : '';
+          const username = t.telegramUsername ? String(t.telegramUsername) : '';
+
+          db.prepare(`
+            INSERT INTO teachers (hemis_id, full_name, department, faculty, phone, telegram_chat_id, telegram_username, is_active)
+            VALUES (?, ?, ?, 'Axborot texnologiyalari fakulteti', ?, ?, ?, 1)
+            ON CONFLICT(hemis_id) DO UPDATE SET
+              full_name = excluded.full_name,
+              department = excluded.department,
+              phone = excluded.phone,
+              telegram_chat_id = CASE WHEN excluded.telegram_chat_id != '' THEN excluded.telegram_chat_id ELSE teachers.telegram_chat_id END,
+              telegram_username = CASE WHEN excluded.telegram_username != '' THEN excluded.telegram_username ELSE teachers.telegram_username END,
+              is_active = 1
+          `).run(hemisId, fullName, dept, phone, chatId, username);
+        }
+      }
+
+      // 2. Bugungi kungi darslar va davomat holatlarini sinxronizatsiya qilish
+      const today = new Date().toISOString().split('T')[0];
+      let syncedLessonsCount = 0;
+
+      if (Array.isArray(data.todayLessons) && data.todayLessons.length > 0) {
+        for (const l of data.todayLessons) {
+          // O'qituvchini topish
+          const teacherLastName = (l.teacher || '').split(' ')[0].toUpperCase();
+          const teacher = db.prepare(`
+            SELECT id, full_name FROM teachers 
+            WHERE UPPER(full_name) LIKE ? OR hemis_id = ? 
+            LIMIT 1
+          `).get(`%${teacherLastName}%`, String(l.teacherUid || l.hemisId || ''));
+
+          if (!teacher) continue;
+
+          // Guruhni topish yoki yaratish
+          let group = db.prepare('SELECT id FROM groups WHERE name = ? OR hemis_group_id = ?').get(l.group, l.group);
+          if (!group) {
+            const insG = db.prepare('INSERT INTO groups (hemis_group_id, name, course, faculty, student_count) VALUES (?, ?, 3, ?, 26)').run(l.group, l.group, 'Axborot texnologiyalari fakulteti');
+            group = { id: insG.lastInsertRowid };
+          }
+
+          // Fanni topish yoki yaratish
+          let subject = db.prepare('SELECT id FROM subjects WHERE name = ?').get(l.subject);
+          if (!subject) {
+            const insS = db.prepare('INSERT INTO subjects (name, code) VALUES (?, ?)').run(l.subject, 'CS-HEMIS');
+            subject = { id: insS.lastInsertRowid };
+          }
+
+          // Juftlik raqami va vaqtini tahlil qilish (masalan "1. 08:00-09:20")
+          let pairNumber = 1;
+          let pairTime = "08:00 - 09:20";
+          if (l.pair && l.pair.includes('.')) {
+            const parts = l.pair.split('.');
+            pairNumber = parseInt(parts[0].trim(), 10) || 1;
+            pairTime = (parts[1] || '').trim().replace('-', ' - ');
+          } else if (l.pair) {
+            pairTime = l.pair.replace('-', ' - ');
+          }
+
+          const hemisScheduleId = `HEMIS-OTM-${l.id || l.lessonId}`;
+          const isSaved = !!l.isSaved;
+          const status = isSaved ? 'COMPLETED' : 'NOT_TAKEN';
+          const totalStudents = 26;
+          const markedStudents = isSaved ? 26 : 0;
+
+          // Mavjud darsni tekshirish
+          const existingLesson = db.prepare(`
+            SELECT id, attendance_status FROM lessons 
+            WHERE hemis_schedule_id = ? OR (date = ? AND pair_number = ? AND teacher_id = ? AND group_id = ?)
+          `).get(hemisScheduleId, today, pairNumber, teacher.id, group.id);
+
+          let lessonId;
+          if (existingLesson) {
+            lessonId = existingLesson.id;
+            db.prepare(`
+              UPDATE lessons 
+              SET attendance_status = ?, marked_students = ?, pair_time = ?, room = ?, updated_at = datetime('now', 'localtime')
+              WHERE id = ?
+            `).run(status, markedStudents, pairTime, l.room || 'Xona', lessonId);
+          } else {
+            const insL = db.prepare(`
+              INSERT INTO lessons (
+                hemis_schedule_id, date, pair_number, pair_time,
+                teacher_id, group_id, subject_id, room,
+                attendance_status, total_students, marked_students
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+              hemisScheduleId, today, pairNumber, pairTime,
+              teacher.id, group.id, subject.id, l.room || 'Xona',
+              status, totalStudents, markedStudents
+            );
+            lessonId = insL.lastInsertRowid;
+          }
+
+          // Agar HEMIS da davomat saqlangan bo'lsa -> barcha faol ogohlantirishlarni resolved = 1 qilamiz
+          if (isSaved) {
+            db.prepare(`
+              UPDATE notifications 
+              SET resolved = 1, resolved_at = datetime('now', 'localtime')
+              WHERE lesson_id = ? AND resolved = 0
+            `).run(lessonId);
+          }
+
+          syncedLessonsCount++;
+        }
+      }
+
+      return {
+        success: true,
+        source: apiUrl,
+        superAdmin: data.superAdmin,
+        teachersCount: (data.teachers || []).length,
+        lessonsCount: syncedLessonsCount,
+        message: `HEMIS tizimi (${apiUrl}) dan ${syncedLessonsCount} ta dars va ${data.teachers ? data.teachers.length : 0} ta o'qituvchi muvaffaqiyatli sinxronizatsiya qilindi.`
+      };
+    } catch (err) {
+      console.warn(`[HemisService] Sync xatosi (${apiUrl}):`, err.message);
+      return {
+        success: false,
+        source: apiUrl,
+        error: err.message
+      };
+    }
+  }
+
+  // Davomat holatini HEMIS OTM tizimida ham almashtirish (agar HEMIS klon ulangan bo'lsa)
+  async toggleHemisAttendance(lessonId) {
+    const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(lessonId);
+    if (!lesson) return;
+
+    if (lesson.hemis_schedule_id && lesson.hemis_schedule_id.startsWith('HEMIS-OTM-')) {
+      const otmId = lesson.hemis_schedule_id.replace('HEMIS-OTM-', '');
+      try {
+        const apiUrl = this.getHemisApiUrl().replace(/\/+$/, '');
+        await fetch(`${apiUrl}/attendance/toggle-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lessonId: otmId }),
+          signal: AbortSignal.timeout(3000)
+        });
+      } catch (e) {
+        console.warn('HEMIS OTM da davomatni toggle qilishda ogohlantirish:', e.message);
+      }
+    }
+  }
+
+  // Test connection to HEMIS
   async testConnection(apiUrl, apiToken) {
     if (!apiUrl) {
       return { success: false, error: 'HEMIS API manzili kiritilmadi' };
     }
-    if (!apiToken) {
-      return { success: false, error: 'HEMIS API token kiritilmadi' };
-    }
 
     try {
       const cleanUrl = apiUrl.replace(/\/+$/, '');
-      const response = await fetch(`${cleanUrl}/data/teacher-list?limit=1`, {
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Accept': 'application/json'
-        },
-        signal: AbortSignal.timeout(8000)
+      const response = await fetch(`${cleanUrl}/admin/overview`, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000)
       });
 
       if (response.ok) {
@@ -70,93 +227,26 @@ class HemisService {
     }
   }
 
-  // Search teachers by name from HEMIS API or Mock Catalog
+  // O'qituvchilarni qidirish
   async searchTeachers(query) {
     const term = (query || '').trim().toLowerCase();
     if (!term) return [];
 
-    const isLive = !this.isMockMode();
-    const apiUrl = this.getSetting('hemis_api_url');
-    const apiToken = this.getSetting('hemis_api_token');
-
-    if (isLive && apiUrl && apiToken) {
-      try {
-        const cleanUrl = apiUrl.replace(/\/+$/, '');
-        const response = await fetch(`${cleanUrl}/data/teacher-list?search=${encodeURIComponent(term)}&limit=15`, {
-          headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Accept': 'application/json'
-          },
-          signal: AbortSignal.timeout(6000)
-        });
-
-        if (response.ok) {
-          const json = await response.json();
-          const items = Array.isArray(json.data?.items) ? json.data.items : (Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []));
-          return items.map(item => ({
-            hemis_id: item.employee_id_number || item.code || `T-${item.id}`,
-            full_name: item.short_name || item.full_name || `${item.second_name || ''} ${item.first_name || ''} ${item.third_name || ''}`.trim(),
-            department: item.department?.name || item.department_name || 'Kafedra',
-            faculty: item.faculty?.name || item.faculty_name || 'Fakultet',
-            phone: item.phone || ''
-          }));
-        }
-      } catch (err) {
-        console.warn('HEMIS API search error, falling back to catalog:', err.message);
-      }
-    }
-
-    // Filter from Mock Catalog + Local Database
-    const matched = MOCK_HEMIS_TEACHERS_CATALOG.filter(t => 
-      t.full_name.toLowerCase().includes(term) ||
-      t.department.toLowerCase().includes(term) ||
-      t.hemis_id.toLowerCase().includes(term)
-    );
+    const matched = db.prepare(`
+      SELECT hemis_id, full_name, department, faculty, phone, telegram_username, telegram_chat_id
+      FROM teachers
+      WHERE is_active = 1 AND (
+        LOWER(full_name) LIKE ? OR
+        LOWER(department) LIKE ? OR
+        LOWER(hemis_id) LIKE ?
+      )
+      LIMIT 15
+    `).all(`%${term}%`, `%${term}%`, `%${term}%`);
 
     return matched;
   }
 
-  // Sync today's schedule from HEMIS
-  async syncSchedule() {
-    if (this.isMockMode()) {
-      return {
-        success: true,
-        mode: 'MOCK',
-        message: "Bugungi dars jadvali sinxronizatsiya qilindi (Lokal rejim)",
-        syncedCount: db.prepare('SELECT COUNT(*) as count FROM lessons WHERE date = date(\'now\', \'localtime\')').get().count
-      };
-    }
-
-    const apiUrl = this.getSetting('hemis_api_url');
-    const apiToken = this.getSetting('hemis_api_token');
-
-    if (!apiUrl || !apiToken) {
-      throw new Error("HEMIS API manzili yoki token sozlanmagan");
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    const cleanUrl = apiUrl.replace(/\/+$/, '');
-    
-    const response = await fetch(`${cleanUrl}/education/schedule?date=${today}`, {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HEMIS API javob bermadi: HTTP ${response.status}`);
-    }
-
-    const json = await response.json();
-    return {
-      success: true,
-      mode: 'LIVE',
-      raw: json
-    };
-  }
-
-  // LOGIK TO'G'RILANDI: Davomat holati va belgilangan talabalar soni hisobi
+  // Manual or simulation attendance update
   setLessonAttendance(lessonId, requestedStatus, markedCount = null) {
     const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(lessonId);
     if (!lesson) {
@@ -171,7 +261,6 @@ class HemisService {
       else if (requestedStatus === 'NOT_TAKEN') marked = 0;
       else marked = Math.floor(lesson.total_students / 2);
     } else {
-      // Clamp marked between 0 and total_students
       marked = Math.max(0, Math.min(Number(marked), lesson.total_students));
       if (marked >= lesson.total_students) {
         finalStatus = 'COMPLETED';
@@ -188,7 +277,6 @@ class HemisService {
       WHERE id = ?
     `).run(finalStatus, marked, lessonId);
 
-    // Agar COMPLETED bo'lsa -> ogohlantirishlarni resolved = 1 qilamiz
     if (finalStatus === 'COMPLETED') {
       db.prepare(`
         UPDATE notifications 
@@ -201,7 +289,6 @@ class HemisService {
         `Dars #${lessonId} davomati to'liq yakunlandi (${marked}/${lesson.total_students}). Faol ogohlantirishlar yopildi.`
       );
     } else {
-      // LOGIK TO'G'RILANDI: Agar davomat qaytadan NOT_TAKEN yoki PARTIAL qilinsa, ogohlantirish yana kutilmoqda (resolved = 0) bo'lishi kerak!
       db.prepare(`
         UPDATE notifications 
         SET resolved = 0, resolved_at = NULL
@@ -210,9 +297,12 @@ class HemisService {
 
       db.prepare('INSERT INTO audit_logs (action, details) VALUES (?, ?)').run(
         'ATTENDANCE_CHANGED',
-        `Dars #${lessonId} davomati bekor qilindi yoki o'zgartirildi: ${finalStatus} (${marked}/${lesson.total_students}).`
+        `Dars #${lessonId} davomati o'zgartirildi: ${finalStatus} (${marked}/${lesson.total_students}).`
       );
     }
+
+    // HEMIS OTM ga ham sinxronizatsiya yuborish
+    this.toggleHemisAttendance(lessonId).catch(() => {});
 
     return {
       success: true,

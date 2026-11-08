@@ -123,13 +123,14 @@ function seedBaseData() {
 
   // Insert default settings
   const insertSetting = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-  insertSetting.run('hemis_api_url', 'https://student.fstu.uz/rest/v1');
+  insertSetting.run('hemis_api_url', 'http://localhost:4000/api');
   insertSetting.run('hemis_api_token', '');
-  insertSetting.run('telegram_bot_token', '');
-  insertSetting.run('telegram_bot_username', 'hemis_davomat_bot');
+  insertSetting.run('telegram_bot_token', '9028859067:AAFEIB5KwwuRtlVocmAVUBKEZQqmUVV5WgQ');
+  insertSetting.run('telegram_bot_username', 'fstu_davomat_bot');
+  insertSetting.run('super_admin_name', 'Abdunazarov Azizbek Soxibjonovich');
   insertSetting.run('auto_check_enabled', '1');
   insertSetting.run('auto_check_interval_mins', '15');
-  insertSetting.run('mock_mode', '1');
+  insertSetting.run('mock_mode', '0');
 
   // Insert Teachers
   const insertTeacher = db.prepare(`

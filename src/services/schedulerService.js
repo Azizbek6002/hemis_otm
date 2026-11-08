@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const telegramService = require('./telegramService');
+const hemisService = require('./hemisService');
 const { db } = require('../database/db');
 
 class SchedulerService {
@@ -21,6 +22,7 @@ class SchedulerService {
     this.cronTask = cron.schedule('*/15 * * * *', async () => {
       console.log('⏰ [Cron] Avtomatik davomat tekshiruvi boshlandi...');
       try {
+        await hemisService.syncFromHemis();
         const result = await telegramService.checkAndAutoNotify();
         console.log('✅ [Cron] Tekshiruv natijasi:', result);
       } catch (err) {

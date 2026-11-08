@@ -114,6 +114,10 @@ class TelegramService {
       ? `🚨 <b>HEMIS DAVOMAT: ${reminderNumber}-OGOHLANTIRISH!</b>`
       : `🔔 <b>HEMIS DAVOMAT OGOHLANTIRISHI</b>`;
 
+    const hemisWebUrl = (this.getSetting('hemis_api_url') || 'http://localhost:4000')
+      .replace(/\/api\/?$/, '')
+      .replace(/\/rest\/v1\/?$/, '');
+
     return `${reminderHeader}
 
 Hurmatli <b>${teacher.full_name}</b>!
@@ -128,7 +132,7 @@ Sizning quyidagi darsingiz uchun HEMIS tizimida talabalar davomati to'liq olinma
 
 ⚠️ <i>Eslatma: Universitet ichki tartib-qoidalariga muvofiq, dars davomati to'liq va o'z vaqtida kiritilishi shart. Aks holda OTM ma'muriyati tomonidan intizomiy chora (xayfsan) berilishi mumkin!</i>
 
-👉 <b>HEMIS ga kirish:</b> ${this.getSetting('hemis_api_url') || 'https://student.fstu.uz'}`;
+👉 <b>HEMIS ga kirish:</b> ${hemisWebUrl}`;
   }
 
   async notifyTeacherForLesson(lessonId, isManual = false) {
