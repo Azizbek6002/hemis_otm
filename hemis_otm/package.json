@@ -1,0 +1,26 @@
+{
+  "name": "hemis-otm-clone",
+  "version": "1.9.84",
+  "description": "HEMIS OTM O'qituvchilar Axborot Tizimi - 1:1 To'liq Kloni va Telegram Bot API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "hemis",
+    "otm",
+    "university",
+    "attendance",
+    "schedule",
+    "telegram-bot"
+  ],
+  "author": "HEMIS System",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "node-cron": "^4.6.0",
+    "node-telegram-bot-api": "^2.3.0"
+  }
+}

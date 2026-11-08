@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HEMIS OTM — O'qituvchilar va Davomat Monitoring Paneli (SuperAdmin)</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="admin-navbar">
+    <div class="admin-nav-left">
+      <a href="/admin" class="admin-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>HEMIS OTM</span>
+      </a>
+      <span class="admin-badge-role">SuperAdmin Paneli</span>
+    </div>
+
+    <div class="admin-nav-right">
+      <div class="bot-status-pill" title="Telegram Bot faol holatda tinglamoqda">
+        <span class="status-dot"></span>
+        <span>@fstu_davomat_bot: <b>Faol</b></span>
+      </div>
+
+      <div class="user-profile-badge">
+        <div class="user-avatar-circle" id="userInitials">AA</div>
+        <div>
+          <div style="font-weight: 600;" id="superAdminNameNav">Azizbek Abdunazarov</div>
+          <div style="font-size: 11px; opacity: 0.85;">Bosh Administrator</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ASOSIY KONTEYNER -->
+  <main class="admin-container">
+
+    <!-- KPI STATISTIKA KARTALARI -->
+    <div class="kpi-grid">
+      <!-- 1. Jami O'qituvchilar -->
+      <div class="kpi-card blue">
+        <div class="kpi-icon blue">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="kpi-info">
+          <h3 id="statTotalTeachers">0</h3>
+          <p>Jami HEMIS O'qituvchilari</p>
+        </div>
+      </div>
+
+      <!-- 2. Botga Ulanganlar -->
+      <div class="kpi-card green">
+        <div class="kpi-icon green">
+          <i class="fa-brands fa-telegram"></i>
+        </div>
+        <div class="kpi-info">
+          <h3>
+            <span id="statConnectedTeachers">0</span>
+            <span class="kpi-badge badge-success" id="statConnectedPercent">0%</span>
+          </h3>
+          <p>Botga Ulangan O'qituvchilar</p>
+        </div>
+      </div>
+
+      <!-- 3. Bugungi Darslar -->
+      <div class="kpi-card yellow">
+        <div class="kpi-icon yellow">
+          <i class="fa-solid fa-book-open"></i>
+        </div>
+        <div class="kpi-info">
+          <h3 id="statTodayLessons">0</h3>
+          <p>Bugungi Darslar (<span id="statTodayDate">05.11.2026</span>)</p>
+        </div>
+      </div>
+
+      <!-- 4. Saqlanmagan Davomatlar -->
+      <div class="kpi-card red">
+        <div class="kpi-icon red">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="kpi-info">
+          <h3 id="statUnsavedLessons">0</h3>
+          <p>8.2 Saqlanmagan Davomatlar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HARAKATLAR VA BOSHQARUV PANELI -->
+    <div class="action-bar">
+      <div class="action-bar-title">
+        <i class="fa-solid fa-bolt" style="color: var(--primary-color);"></i>
+        <span>Tezkor Amallar va Xabarnomalar</span>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btnBroadcastAll" type="button">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Barchaga 20:00 Bildirishnomasini Yuborish</span>
+        </button>
+
+        <button class="btn btn-outline" id="btnRefreshData" type="button">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Yangilash</span>
+        </button>
+
+        <button class="btn btn-outline" id="btnOpenManualModal" type="button">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Qo'lda O'qituvchi Biriktirish</span>
+        </button>
+
+        <a href="/" target="_blank" class="btn btn-outline" title="O'qituvchi HEMIS Kabineti (1:1 kloni)">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>HEMIS OTM Tizimiga O'tish</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- TABS KONTEYNERI -->
+    <div class="tabs-container">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-teachers">
+          <i class="fa-solid fa-chalkboard-user"></i>
+          <span>1. O'qituvchilar va Bot Ulashuv Holati</span>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-attendance">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>2. Bugungi 8.2 Davomat Monitoringi</span>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>3. Tizim va Bot Sozlamalari</span>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-api" id="tabBtnApi">
+          <i class="fa-solid fa-lock" id="tabApiLockIcon" style="color: #f59e0b;"></i>
+          <span>4. API Integratsiyasi</span>
+          <span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; font-weight: 700;" id="badgeApiLock">Parolli</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: O'QITUVCHILAR RO'YXATI -->
+      <div class="tab-content active" id="tab-teachers">
+        <div class="table-filter-bar">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="teacherSearchInput" class="search-input" placeholder="F.I.SH, HEMIS ID yoki kafedra...">
+          </div>
+
+          <div style="font-size: 13px; color: var(--text-muted);">
+            Jami o'qituvchilar: <b id="teacherTableCount">0</b> nafar
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>HEMIS ID</th>
+                <th>O'qituvchi F.I.SH</th>
+                <th>Kafedra / Bo'lim</th>
+                <th>Telefon</th>
+                <th>Telegram Bot Holati</th>
+                <th>Ulanish Sanasi</th>
+                <th>Bugungi Davomat</th>
+                <th>Amallar</th>
+              </tr>
+            </thead>
+            <tbody id="teachersTableBody">
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 30px; color: #888;">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Ma'lumotlar yuklanmoqda...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: BUGUNGI 8.2 DAVOMAT JURNALI -->
+      <div class="tab-content" id="tab-attendance">
+        <div class="table-filter-bar">
+          <div style="font-weight: 600; font-size: 14px;">
+            8.2 "Dars o'tish" bo'limi bo'yicha bugungi darslar ro'yxati (05.11.2026)
+          </div>
+          <div style="font-size: 13px; color: #666;">
+            Sanasi yashil = saqlangan | Sanasi qizil = saqlanmagan
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sana</th>
+                <th>Guruh</th>
+                <th>Fan Nomi</th>
+                <th>Mashg'ulot Turi</th>
+                <th>Juftlik / Vaqt</th>
+                <th>Auditoriya</th>
+                <th>O'qituvchi</th>
+                <th>Davomat Holati (8.2)</th>
+                <th>Amal</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 30px; color: #888;">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Darslar yuklanmoqda...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: TIZIM VA BOT SOZLAMALARI -->
+      <div class="tab-content" id="tab-settings">
+        <div style="max-width: 750px; line-height: 1.8;">
+          <h4 style="margin-bottom: 15px; font-weight: 700; color: var(--primary-color);">
+            <i class="fa-solid fa-gear"></i> Tizim Konfiguratsiyasi va API Integratsiyasi
+          </h4>
+
+          <div class="hemis-card" style="background: #fbfcfd; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 200px 1fr; gap: 12px; font-size: 13px;">
+              <div><b>Bosh SuperAdmin:</b></div>
+              <div id="cfgSuperAdminName">Abdunazarov Azizbek Soxibjonovich</div>
+
+              <div><b>SuperAdmin Telegram ID:</b></div>
+              <div><code>6601373862</code></div>
+
+              <div><b>Telegram Bot:</b></div>
+              <div><a href="https://t.me/fstu_davomat_bot" target="_blank" style="color: var(--primary-color); font-weight: 600;">@fstu_davomat_bot</a> (Hemis OTM)</div>
+
+              <div><b>Avtomatik Xabarnoma:</b></div>
+              <div>Har kuni kechki soat <b>20:00 da</b> (Cron avtomatik tekshirib jo'natadi)</div>
+
+              <div><b>O'z-o'zini ro'yxatdan o'tkazish:</b></div>
+              <div>🟢 <b>Faol</b> (O'qituvchi botga kirib o'z HEMIS ID sini kiritadi va 10 soniyada ulanadi)</div>
+
+              <div><b>HEMIS REST API:</b></div>
+              <div><code>http://10.58.91.229:4000/api</code></div>
+            </div>
+          </div>
+
+          <h5 style="margin-bottom: 10px; font-weight: 700;">O'qituvchilarga yo'riqnoma matni:</h5>
+          <div style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 6px; font-size: 13px; color: #444;">
+            O'qituvchilar Telegram orqali <a href="https://t.me/fstu_davomat_bot" target="_blank">@fstu_davomat_bot</a> ga kirib <b>/start</b> bosishadi va o'zlarining HEMIS ID sini (masalan: <code>3921612001</code>) yuborishadi. Bot ularning profilingizni tasdiqlash uchun chiqaradi va tasdiqlangach darhol ularni ushbu Admin Dashboardda ko'rasiz.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: API INTEGRATSIYASI (PAROL BILAN HIMOYALANGAN) -->
+      <div class="tab-content" id="tab-api">
+        <div style="max-width: 820px; line-height: 1.8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-weight: 700; color: var(--primary-color);">
+              <i class="fa-solid fa-key" style="color: #f59e0b;"></i> HEMIS REST API Sozlamalari (SuperAdmin)
+            </h4>
+            <button class="btn btn-outline" type="button" id="btnLockApiTab" style="padding: 5px 12px; font-size: 12px;">
+              <i class="fa-solid fa-lock"></i> Qayta Qulflash
+            </button>
+          </div>
+
+          <!-- USER REQUESTED EXACT BANNER -->
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 16px 20px; border-radius: 8px; margin-bottom: 22px; font-size: 13px; color: #166534; line-height: 1.6;">
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; color: #15803d;">
+              <i class="fa-solid fa-circle-check"></i> Haqiqiy OTM HEMIS REST API rejimi:
+            </div>
+            Universitet sizga API URL va Token berganda, Super Admin panelidagi "Sozlamalar" bo'limiga kirib:<br>
+            &bull; <strong>HEMIS API URL:</strong> masalan, <code>https://hemis.fstu.uz/rest/v1</code><br>
+            &bull; <strong>HEMIS API Token:</strong> Berilgan Bearer token kiritasiz va saqlaysiz.<br>
+            Tizim avtomatik ravishda haqiqiy HEMIS ga ulanadi. Hech qanday qayta kodlash yoki qayta o'rnatish talab qilinmaydi.
+          </div>
+
+          <form id="apiSettingsForm">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 6px;">
+                HEMIS API URL:
+              </label>
+              <input type="text" id="cfgHemisApiUrl" class="form-control" style="width: 100%; font-size: 14px;" placeholder="masalan, https://hemis.fstu.uz/rest/v1" required>
+              <div style="font-size: 11px; color: #777; margin-top: 4px;">Universitet taqdim etgan HEMIS REST API manzili (yoki sinov uchun: http://localhost:4000/api)</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 6px;">
+                HEMIS API Token (Bearer Token):
+              </label>
+              <input type="password" id="cfgHemisApiToken" class="form-control" style="width: 100%; font-size: 14px;" placeholder="Universitetdan berilgan Bearer API Token">
+              <div style="font-size: 11px; color: #777; margin-top: 4px;">Haqiqiy HEMIS tizimi uchun maxfiy avtorizatsiya kaliti</div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; margin-top: 25px;">
+              <button type="submit" class="btn btn-primary" id="btnSaveApiSettings" style="padding: 10px 24px; font-weight: 600;">
+                <i class="fa-solid fa-floppy-disk"></i> Sozlamalarni Saqlash
+              </button>
+
+              <button type="button" class="btn btn-outline" id="btnTestApiConnection" style="padding: 10px 18px;">
+                <i class="fa-solid fa-plug"></i> Ulanishni Tekshirish
+              </button>
+
+              <span id="apiTestStatusBadge" style="font-size: 13px; font-weight: 600;"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- QO'LDA O'QITUVCHI BIRIKTIRISH MODALI -->
+  <div class="modal-overlay" id="manualAddModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-user-plus" style="color: var(--primary-color); margin-right: 6px;"></i>
+          O'qituvchini Qo'lda Biriktirish
+        </div>
+        <button class="modal-close-btn" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="manualAddForm">
+          <div class="form-group">
+            <label>O'qituvchi F.I.SH *</label>
+            <input type="text" id="mFullName" class="form-control" placeholder="Sobirov Jamshid Rustamovich" required>
+          </div>
+
+          <div class="form-group">
+            <label>HEMIS ID Raqami *</label>
+            <input type="text" id="mHemisId" class="form-control" placeholder="3921612002" required>
+          </div>
+
+          <div class="form-group">
+            <label>Telegram Chat ID *</label>
+            <input type="text" id="mChatId" class="form-control" placeholder="6601373862" required>
+          </div>
+
+          <div class="form-group">
+            <label>Kafedra / Bo'lim</label>
+            <input type="text" id="mDepartment" class="form-control" placeholder="Dasturiy injiniring kafedrasi">
+          </div>
+
+          <div class="form-group">
+            <label>Telefon Raqam</label>
+            <input type="text" id="mPhone" class="form-control" placeholder="+998 90 123 45 67">
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn btn-outline" id="btnCancelModal">Bekor qilish</button>
+            <button type="submit" class="btn btn-primary">Saqlash va Ulanish</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- API PASSWORD VERIFICATION MODAL (HIMOYALANGAN BO'LIM) -->
+  <div class="modal-overlay" id="apiPasswordModal" style="display: none;">
+    <div class="modal-card" style="max-width: 500px; border-radius: 10px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #fff; padding: 18px 22px;">
+        <div class="modal-title" style="color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-shield-halved" style="color: #f59e0b;"></i>
+          API Bo'limiga Kirish (Himoyalangan)
+        </div>
+        <button class="modal-close-btn" id="btnCloseApiPasswordModal" style="color: #fff; font-size: 22px;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px;">
+        <p style="font-size: 13px; color: #4b5563; line-height: 1.6; margin-bottom: 18px;">
+          Ushbu bo'lim OTM HEMIS tizimining maxfiy API konfiguratsiyasini o'z ichiga oladi. Davom etish uchun xavfsizlik parolini kiriting:
+        </p>
+
+        <form id="apiPasswordForm">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #1f2937; margin-bottom: 6px;">
+              <i class="fa-solid fa-key" style="color: #2563eb;"></i> Xavfsizlik paroli:
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="apiPasswordInput" class="form-control" style="width: 100%; padding-right: 42px; font-size: 14px;" placeholder="Parolni kiriting..." autocomplete="off">
+              <button type="button" id="togglePasswordVisibilityBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;">
+                <i class="fa-solid fa-eye" id="togglePasswordEyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- USER REQUESTED EXACT WRONG PASSWORD MESSAGE -->
+          <div id="apiPasswordErrorContainer" style="display: none; margin-top: 16px;">
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 16px;">
+              <div style="font-weight: 700; color: #dc2626; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Xavfsizlik paroli noto‘g‘ri kiritildi!
+              </div>
+              <div style="font-size: 12px; color: #4b5563; line-height: 1.5;">
+                Ushbu bo'lim faqat OTM texnik ma'sullari uchun himoyalangan.<br>
+                Parolni bilish uchun bizga murojaat qiling:
+              </div>
+              <div style="margin-top: 12px; padding: 12px; background: #ffffff; border: 1px dashed #f87171; border-radius: 6px;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #991b1b; letter-spacing: 0.5px;">
+                  Texnik ma'sullar:
+                </div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e3a8a; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-user-gear" style="color: #2563eb;"></i> Turaqulov Ilhomjon
+                </div>
+                <div style="font-size: 14px; margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-phone" style="color: #10b981;"></i> 
+                  <a href="tel:+998957552218" style="color: #0284c7; font-weight: 700; text-decoration: none;">+998 95 755 22 18</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+            <button type="button" class="btn btn-outline" id="btnCancelApiPasswordModal">Bekor qilish</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmitApiPassword">
+              <i class="fa-solid fa-unlock-keyhole"></i> Tasdiqlash & Kirish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST BILDIRISHNOMALAR KONTEYNERI -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- FOOTER -->
+  <footer class="admin-footer">
+    <div><strong>HEMIS OTM</strong> — Oliy Ta'lim Axborot Tizimi Boshqaruv Markazi &copy; 2026</div>
+    <div style="margin-top: 5px; color: #888;">Universitet Davomat va Darslar Monitoring Tizimi</div>
+  </footer>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4a90e2"/>
+      <stop offset="100%" stop-color="#357abd"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="58" fill="#f0f4f8" stroke="#d0dbe5" stroke-width="2"/>
+  <!-- Woman Teacher Avatar -->
+  <path d="M60 20 C48 20 40 30 40 45 C40 54 44 60 50 63 C40 68 30 78 28 95 C38 105 82 105 92 95 C90 78 80 68 70 63 C76 60 80 54 80 45 C80 30 72 20 60 20 Z" fill="#607d8b"/>
+  <!-- Hair & Head -->
+  <path d="M42 42 C40 26 50 20 60 20 C70 20 80 26 78 42 C74 38 68 35 60 35 C52 35 46 38 42 42 Z" fill="#3e2723"/>
+  <circle cx="60" cy="46" r="16" fill="#fbd3b6"/>
+  <!-- Dark hair sides -->
+  <path d="M44 42 C44 54 48 58 48 58 C46 54 45 48 45 44 Z" fill="#3e2723"/>
+  <path d="M76 42 C76 54 72 58 72 58 C74 54 75 48 75 44 Z" fill="#3e2723"/>
+  <!-- Eyes & Smile -->
+  <circle cx="55" cy="45" r="1.5" fill="#333"/>
+  <circle cx="65" cy="45" r="1.5" fill="#333"/>
+  <path d="M57 52 Q60 55 63 52" stroke="#d35400" stroke-width="1.2" fill="none"/>
+  <!-- Clothes / Suit -->
+  <path d="M38 95 C40 76 50 70 60 70 C70 70 80 76 82 95 Z" fill="#2c3e50"/>
+  <polygon points="60,72 55,85 65,85" fill="#ffffff"/>
+  <polygon points="60,78 57,92 63,92" fill="#00bcd4"/>
+</svg>

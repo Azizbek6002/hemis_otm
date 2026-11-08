@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <circle cx="50" cy="50" r="46" fill="#00529b" stroke="#f39c12" stroke-width="2.5"/>
+  <circle cx="50" cy="50" r="41" fill="#ffffff"/>
+  <!-- Sun and Khumo bird stylized -->
+  <circle cx="50" cy="50" r="32" fill="#87ceeb"/>
+  <circle cx="50" cy="45" r="14" fill="#f1c40f"/>
+  <!-- Wings of Khumo -->
+  <path d="M50 35 C35 30 25 45 28 65 C35 60 42 55 50 62 C58 55 65 60 72 65 C75 45 65 30 50 35 Z" fill="#ffffff" stroke="#2c3e50" stroke-width="1"/>
+  <!-- Ribbon in Uzbekistan flag colors -->
+  <path d="M22 75 Q50 82 78 75 L78 80 Q50 87 22 80 Z" fill="#0099b5"/>
+  <path d="M22 80 Q50 87 78 80 L78 83 Q50 90 22 83 Z" fill="#ffffff"/>
+  <path d="M22 83 Q50 90 78 83 L78 88 Q50 95 22 88 Z" fill="#1eb53a"/>
+  <!-- Crescent & star on top -->
+  <circle cx="50" cy="22" r="5" fill="#f1c40f"/>
+</svg>

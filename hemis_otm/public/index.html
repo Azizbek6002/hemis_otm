@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HEMIS OTM</title>
+  
+  <!-- HEMIS Official 3-Cube Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/hemis-favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/hemis.css">
+</head>
+<body>
+
+  <!-- TOP HEADER (HEMIS Original Style - 1:1 Toza) -->
+  <header class="main-header">
+    <div class="header-left">
+      <div class="logo-area" id="headerLogoArea">
+        <span class="logo-text-full">HEMIS OTM</span>
+        <span class="logo-text-mini" style="display: none;">H</span>
+      </div>
+      <!-- 3 Gorizontal Chiziq (Sidebar Toggle) -->
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Menyuni yig'ish / ochish" type="button">
+        <i class="fa fa-bars"></i>
+      </button>
+    </div>
+
+    <div class="header-right">
+      <!-- Til tanlash -->
+      <button class="header-lang-btn" id="langBtn" type="button">
+        <span>O‘zbekcha</span>
+        <i class="fa fa-chevron-down" style="font-size: 10px;"></i>
+      </button>
+
+      <!-- Sariq yulduzcha belgisi -->
+      <button class="header-icon-btn star" title="Tanlanganlar" type="button">
+        <i class="fa fa-star"></i>
+      </button>
+
+      <!-- Yangilash tugmasi -->
+      <button class="header-icon-btn" id="refreshBtn" title="Yangilash" type="button">
+        <i class="fa fa-sync-alt"></i>
+      </button>
+
+      <!-- O'qituvchi profili qisqartmasi -->
+      <div class="user-profile-widget" id="userProfileHeaderBtn" title="Mening profilim">
+        <img src="/assets/teacher-avatar.svg" alt="Avatar" class="user-avatar-circle">
+        <div class="user-name-text">
+          <span class="full-name" id="headerTeacherName">AKRAMOVA G. A.</span>
+          <span class="user-role" id="headerTeacherRole">O'qituvchi</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP MAIN WRAPPER (SIDEBAR + CONTENT) -->
+  <div class="app-wrapper" id="appWrapper">
+
+    <!-- CHAP ASOSIY MENYU (SIDEBAR - Slate Dark) -->
+    <aside class="main-sidebar" id="mainSidebar">
+      <!-- Tezkor menyu dropdown qutisi -->
+      <div class="sidebar-search-box">
+        <select class="sidebar-quick-select" id="sidebarQuickSelect">
+          <option value="dashboard">Tezkor menyu</option>
+          <option value="schedule">Dars jadvali</option>
+          <option value="lesson_process">Dars o'tish</option>
+          <option value="attendance_journal">Davomat jurnali</option>
+          <option value="subject_topics">Fan mavzulari</option>
+          <option value="subject_resources">Fan resurslari</option>
+          <option value="statistics">Statistika dashboardi</option>
+          <option value="profile">Mening profilim</option>
+        </select>
+      </div>
+
+      <!-- Menyu ro'yxati -->
+      <ul class="sidebar-menu" id="sidebarMenuList">
+
+        <!-- 0. Bosh sahifa (Dashboard) -->
+        <li class="sidebar-item active" data-page="dashboard">
+          <a class="sidebar-link">
+            <i class="fa fa-home menu-icon"></i>
+            <span>Bosh sahifa</span>
+          </a>
+        </li>
+
+        <!-- 1. E-hujjatlar -->
+        <li class="sidebar-item has-treeview" data-module="e_docs">
+          <a class="sidebar-link">
+            <i class="fa fa-folder menu-icon"></i>
+            <span>E-hujjatlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="sign_docs">
+              <a><i class="fa fa-circle"></i> Hujjatni imzolash</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 2. Xodimlar -->
+        <li class="sidebar-item has-treeview" data-module="staff">
+          <a class="sidebar-link">
+            <i class="fa fa-user-tie menu-icon"></i>
+            <span>Xodimlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="work_plan">
+              <a><i class="fa fa-circle"></i> Shaxsiy ish reja</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 3. Fanlar bazasi -->
+        <li class="sidebar-item has-treeview" data-module="subjects_base">
+          <a class="sidebar-link">
+            <i class="fa fa-book menu-icon"></i>
+            <span>Fanlar bazasi</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="subject_topics">
+              <a><i class="fa fa-circle"></i> Fan mavzulari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="subject_resources">
+              <a><i class="fa fa-circle"></i> Fan resurslari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="subject_tasks">
+              <a><i class="fa fa-circle"></i> Fan topshiriqlari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="course_tasks">
+              <a><i class="fa fa-circle"></i> Kurs topshiriqlari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="calendar_plans">
+              <a><i class="fa fa-circle"></i> Kalendar reja</a>
+            </li>
+            <li class="sidebar-subitem" data-page="subject_info">
+              <a><i class="fa fa-circle"></i> Fan ma'lumotlari</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 4. O'quv jarayoni -->
+        <li class="sidebar-item has-treeview" data-module="edu_process">
+          <a class="sidebar-link">
+            <i class="fa fa-graduation-cap menu-icon"></i>
+            <span>O'quv jarayoni</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="exam_list">
+              <a><i class="fa fa-circle"></i> Imtihonlar ro'yxati</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 5. Yakka darslar -->
+        <li class="sidebar-item has-treeview" data-module="individual_lessons">
+          <a class="sidebar-link">
+            <i class="fa fa-chalkboard-teacher menu-icon"></i>
+            <span>Yakka darslar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="ind_students">
+              <a><i class="fa fa-circle"></i> Fan talabalari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="ind_schedule">
+              <a><i class="fa fa-circle"></i> Yakka dars jadvali</a>
+            </li>
+            <li class="sidebar-subitem" data-page="ind_attendance">
+              <a><i class="fa fa-circle"></i> Yakka dars davomat</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 6. Qayta o'qish -->
+        <li class="sidebar-item has-treeview" data-module="retake">
+          <a class="sidebar-link">
+            <i class="fa fa-redo menu-icon"></i>
+            <span>Qayta o'qish</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="retake_lessons">
+              <a><i class="fa fa-circle"></i> Q.o'qish mashg'ulotlari</a>
+            </li>
+            <li class="sidebar-subitem" data-page="retake_midterm">
+              <a><i class="fa fa-circle"></i> Oraliq baholash</a>
+            </li>
+            <li class="sidebar-subitem" data-page="retake_final">
+              <a><i class="fa fa-circle"></i> Yakuniy baholash</a>
+            </li>
+            <li class="sidebar-subitem" data-page="retake_other">
+              <a><i class="fa fa-circle"></i> Boshqa baholash</a>
+            </li>
+            <li class="sidebar-subitem" data-page="retake_students">
+              <a><i class="fa fa-circle"></i> O'qituvchi talabalari</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 7. O'zlashtirish -->
+        <li class="sidebar-item has-treeview" data-module="grading">
+          <a class="sidebar-link">
+            <i class="fa fa-check-double menu-icon"></i>
+            <span>O'zlashtirish</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="grade_records">
+              <a><i class="fa fa-circle"></i> Shaxsiy qaydnoma kiritish</a>
+            </li>
+            <li class="sidebar-subitem" data-page="grade_requests">
+              <a><i class="fa fa-circle"></i> Baholash so'rovlari</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 8. Mashg'ulotlar (ASOSIY BO'LIM!) -->
+        <li class="sidebar-item has-treeview open" data-module="lessons">
+          <a class="sidebar-link">
+            <i class="fa fa-calendar-alt menu-icon"></i>
+            <span>Mashg'ulotlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu" style="display: block;">
+            <li class="sidebar-subitem" data-page="schedule">
+              <a><i class="fa fa-circle"></i> Dars jadvali</a>
+            </li>
+            <li class="sidebar-subitem active" data-page="lesson_process">
+              <a><i class="fa fa-circle"></i> Dars o'tish</a>
+            </li>
+            <li class="sidebar-subitem" data-page="attendance_journal">
+              <a><i class="fa fa-circle"></i> Davomat jurnali</a>
+            </li>
+            <li class="sidebar-subitem" data-page="grade_journal">
+              <a><i class="fa fa-circle"></i> Baholash jurnali</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 9. Nazoratlar -->
+        <li class="sidebar-item has-treeview" data-module="controls">
+          <a class="sidebar-link">
+            <i class="fa fa-hourglass-half menu-icon"></i>
+            <span>Nazoratlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="control_midterm">
+              <a><i class="fa fa-circle"></i> Oraliq nazorat</a>
+            </li>
+            <li class="sidebar-subitem" data-page="control_final">
+              <a><i class="fa fa-circle"></i> Yakuniy nazorat</a>
+            </li>
+            <li class="sidebar-subitem" data-page="control_other">
+              <a><i class="fa fa-circle"></i> Boshqa nazoratlar</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 10. Ilmiy faoliyat -->
+        <li class="sidebar-item has-treeview" data-module="science">
+          <a class="sidebar-link">
+            <i class="fa fa-flask menu-icon"></i>
+            <span>Ilmiy faoliyat</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="methodological_pubs">
+              <a><i class="fa fa-circle"></i> Uslubiy nashrlar</a>
+            </li>
+            <li class="sidebar-subitem" data-page="scientific_pubs">
+              <a><i class="fa fa-circle"></i> Ilmiy nashrlar</a>
+            </li>
+            <li class="sidebar-subitem" data-page="intellectual_prop">
+              <a><i class="fa fa-circle"></i> Intellektual mulklar</a>
+            </li>
+            <li class="sidebar-subitem" data-page="scientific_activity">
+              <a><i class="fa fa-circle"></i> Ilmiy faollik</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 11. Statistika -->
+        <li class="sidebar-item has-treeview" data-module="statistics_mod">
+          <a class="sidebar-link">
+            <i class="fa fa-chart-bar menu-icon"></i>
+            <span>Statistika</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="statistics">
+              <a><i class="fa fa-circle"></i> Statistika dashboardi</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 12. Hisobotlar -->
+        <li class="sidebar-item has-treeview" data-module="reports">
+          <a class="sidebar-link">
+            <i class="fa fa-bars menu-icon"></i>
+            <span>Hisobotlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="my_feedback">
+              <a><i class="fa fa-circle"></i> Mening fikrim</a>
+            </li>
+            <li class="sidebar-subitem" data-page="global_surveys">
+              <a><i class="fa fa-circle"></i> Global so'rovnoma</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 13. Xabarlar -->
+        <li class="sidebar-item has-treeview" data-module="messages_mod">
+          <a class="sidebar-link">
+            <i class="fa fa-envelope menu-icon"></i>
+            <span>Xabarlar</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="my_messages">
+              <a><i class="fa fa-circle"></i> Mening xabarlarim</a>
+            </li>
+            <li class="sidebar-subitem" data-page="create_message">
+              <a><i class="fa fa-circle"></i> Xabar yaratish</a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 14. Tizim -->
+        <li class="sidebar-item has-treeview" data-module="system_mod">
+          <a class="sidebar-link">
+            <i class="fa fa-cog menu-icon"></i>
+            <span>Tizim</span>
+            <i class="fa fa-angle-left menu-arrow"></i>
+          </a>
+          <ul class="sidebar-submenu">
+            <li class="sidebar-subitem" data-page="file_manager">
+              <a><i class="fa fa-circle"></i> Fayl menejer</a>
+            </li>
+          </ul>
+        </li>
+
+      </ul>
+    </aside>
+
+    <!-- ASOSIY KONTENT MAYDONI -->
+    <main class="content-wrapper" id="mainContentArea">
+
+      <!-- Breadcrumb Navigatsiya (Rasm 8.2 da: Asosiy / Dars o'tish) -->
+      <div class="breadcrumb-nav" id="breadcrumbArea">
+        <a href="javascript:void(0)" onclick="navigateTo('dashboard')">Asosiy</a>
+        <span class="divider">/</span>
+        <span id="breadcrumbCurrentTitle">Dars o'tish</span>
+      </div>
+
+      <!-- SAHIFALAR BLOKI (SPA) -->
+      <div id="pagesContainer">
+
+        <!-- ========================================================
+             8.2 DARS O'TISH (MASHG'ULOTLAR -> DARS O'TISH - Rasm 8.2)
+             ENG ASOSIY SAHIFA: Darslar kunlik chiqadi, saqlanmagan sanalar QIZIL,
+             saqlangach YASHIL bo'ladi. Telegram bot aynan shu yerdan tekshiradi!
+             ======================================================== -->
+        <section class="page-view" id="page-lesson_process">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <select class="filter-select"><option>Fanlarni tanlang</option></select>
+            <select class="filter-select"><option>Mashg'ulotni tanlang</option></select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>O'quv yili</th>
+                  <th>Semestr</th>
+                  <th>Guruh</th>
+                  <th>Dars sanasi <i class="fa fa-caret-up"></i></th>
+                  <th>Fanlar</th>
+                  <th>Mashg'ulot</th>
+                  <th>Juftlik <i class="fa fa-caret-up"></i></th>
+                  <th>Auditoriya</th>
+                  <th>Xodim</th>
+                  <th style="text-align: center;">QR davomat</th>
+                </tr>
+              </thead>
+              <tbody id="lessonsHistoryTableBody">
+                <!-- JS orqali to'ldiriladi:
+                     Oldingi darslar sanasi YASHIL (#00a65a),
+                     Bugungi darslar sanasi QIZIL (#dd4b39 - saqlanmagan),
+                     Saqlangandan so'ng YASHIL bo'ladi! -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             8.1 DARS JADVALI (MASHG'ULOTLAR -> DARS JADVALI - Rasm 8.1)
+             Haftalik reja (Noyabr 2026). Ertangi darslar ro'yxati shu yerdan olinadi.
+             ======================================================== -->
+        <section class="page-view" id="page-schedule" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select" style="min-width: 140px;">
+              <option selected>2026-2027</option>
+              <option>2025-2026</option>
+            </select>
+            <button class="btn-hemis-primary" type="button">OK</button>
+          </div>
+
+          <div class="calendar-view-header">
+            <button class="btn-hemis-primary" style="height: 28px; padding: 0 10px;"><i class="fa fa-chevron-left"></i></button>
+            <h2 class="calendar-month-title">Ноябр 2026</h2>
+            <button class="btn-hemis-primary" style="height: 28px; padding: 0 10px;"><i class="fa fa-chevron-right"></i></button>
+          </div>
+
+          <div class="calendar-grid">
+            <!-- Dushanba 2 -->
+            <div class="calendar-day-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Душанба</span>
+                <span class="day-num">2</span>
+              </div>
+              <div class="calendar-day-body">
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">09:30 - 10:50 | Ma'ruza</div>
+                  <div class="lesson-subject">Algoritmlarni loyihalash</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-117</div>
+                </div>
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">11:00 - 12:20 | Amaliy</div>
+                  <div class="lesson-subject">Algoritmlarni loyihalash</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-206 (kompyuter xonasi)</div>
+                </div>
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">14:30 - 15:50 | Amaliy</div>
+                  <div class="lesson-subject">Chuqur o'qitish</div>
+                  <div class="lesson-group">617-23 Klr</div>
+                  <div class="lesson-room">Xona: 7-207 (kompyuter xonasi)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seshanba 3 -->
+            <div class="calendar-day-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Сешанба</span>
+                <span class="day-num">3</span>
+              </div>
+              <div class="calendar-day-body">
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">09:30 - 10:50 | Amaliy</div>
+                  <div class="lesson-subject">Algoritmlarni loyihalash</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-207</div>
+                </div>
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">13:00 - 14:20 | Amaliy</div>
+                  <div class="lesson-subject">Chuqur o'qitish</div>
+                  <div class="lesson-group">687-23 Klr at</div>
+                  <div class="lesson-room">Xona: 7-117 (kompyuter xonasi)</div>
+                </div>
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">14:30 - 15:50 | Ma'ruza</div>
+                  <div class="lesson-subject">Chuqur o'qitish</div>
+                  <div class="lesson-group">617-23 Klr</div>
+                  <div class="lesson-room">Xona: 7-209</div>
+                </div>
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">14:30 - 15:50 | Ma'ruza</div>
+                  <div class="lesson-subject">Chuqur o'qitish</div>
+                  <div class="lesson-group">687-23 Klr at</div>
+                  <div class="lesson-room">Xona: 7-209</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chorshanba 4 -->
+            <div class="calendar-day-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Чоршанба</span>
+                <span class="day-num">4</span>
+              </div>
+              <div class="calendar-day-body"></div>
+            </div>
+
+            <!-- Payshanba 5 (BUGUNGI KUN - YORQIN MOVAIY HEADER!) -->
+            <div class="calendar-day-col today-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Пайшанба</span>
+                <span class="day-num">5</span>
+              </div>
+              <div class="calendar-day-body">
+                <div class="lesson-card-item" onclick="openAttendanceModal('sch-8')">
+                  <div class="lesson-time-type">08:00 - 09:20 | Amaliy</div>
+                  <div class="lesson-subject">Operatsion tizimlar</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-205 (kompyuter xonasi)</div>
+                </div>
+
+                <div class="lesson-card-item" onclick="openAttendanceModal('sch-9')">
+                  <div class="lesson-time-type">09:30 - 10:50 | Amaliy</div>
+                  <div class="lesson-subject">Operatsion tizimlar</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-201 (kompyuter xonasi)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Juma 6 (ERTANGI KUN - Bot 20:00 da o'qituvchiga shu ro'yxatni yuboradi) -->
+            <div class="calendar-day-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Жума</span>
+                <span class="day-num">6</span>
+              </div>
+              <div class="calendar-day-body">
+                <div class="lesson-card-item">
+                  <div class="lesson-time-type">11:00 - 12:20 | Ma'ruza</div>
+                  <div class="lesson-subject">Operatsion tizimlar</div>
+                  <div class="lesson-group">657-24 DIr</div>
+                  <div class="lesson-room">Xona: 8A-117</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Shanba 7 -->
+            <div class="calendar-day-col">
+              <div class="calendar-day-header">
+                <span class="day-name">Шанба</span>
+                <span class="day-num">7</span>
+              </div>
+              <div class="calendar-day-body"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ========================================================
+             0. BOSH SAHIFA (DASHBOARD - Rasm 1)
+             ======================================================== -->
+        <section class="page-view" id="page-dashboard" style="display: none;">
+          <div class="hemis-card">
+            <h3 class="dashboard-section-title">Mashg'ulotlar</h3>
+            <div class="stat-cards-grid">
+              
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">8</div>
+                    <div class="stat-card-label">Davomat jurnali</div>
+                  </div>
+                  <i class="far fa-calendar-check stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('attendance_journal')">
+                  <i class="fa fa-arrow-circle-right"></i> Davomat jurnali
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">78</div>
+                    <div class="stat-card-label">Mening dars jadvalim</div>
+                  </div>
+                  <i class="fa fa-table stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('schedule')">
+                  <i class="fa fa-arrow-circle-right"></i> Mening dars jadvalim
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">78</div>
+                    <div class="stat-card-label">Darslar ro'yxati</div>
+                  </div>
+                  <i class="fa fa-list stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('lesson_process')">
+                  <i class="fa fa-arrow-circle-right"></i> Darslar ro'yxati
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="hemis-card">
+            <h3 class="dashboard-section-title">Nazoratlar</h3>
+            <div class="stat-cards-grid">
+              
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">0</div>
+                    <div class="stat-card-label">Oraliq nazorat</div>
+                  </div>
+                  <i class="fa fa-hourglass-half stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('control_midterm')">
+                  <i class="fa fa-arrow-circle-right"></i> Oraliq nazorat
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">0</div>
+                    <div class="stat-card-label">Yakuniy nazorat</div>
+                  </div>
+                  <i class="fa fa-hourglass-end stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('control_final')">
+                  <i class="fa fa-arrow-circle-right"></i> Yakuniy nazorat
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-body">
+                  <div>
+                    <div class="stat-card-number">0</div>
+                    <div class="stat-card-label">Boshqa nazoratlar</div>
+                  </div>
+                  <i class="fa fa-hourglass-start stat-card-icon-watermark"></i>
+                </div>
+                <div class="stat-card-footer" onclick="navigateTo('control_other')">
+                  <i class="fa fa-arrow-circle-right"></i> Boshqa nazoratlar
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             8.3 DAVOMAT JURNALI (Rasm 8.3)
+             ======================================================== -->
+        <section class="page-view" id="page-attendance_journal" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select">
+              <option>Semestrni tanlang</option>
+              <option>5-semestr</option>
+              <option>7-semestr</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">#</th>
+                  <th>Guruh <i class="fa fa-caret-up"></i></th>
+                  <th>Fanlar <i class="fa fa-caret-up"></i></th>
+                  <th>Mashg'ulot</th>
+                  <th>O'quv yili</th>
+                  <th>Semestr</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceJournalTableBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top: 10px; color: #777; font-size: 12px;">1-8 / jami 8 ta</div>
+        </section>
+
+        <!-- ========================================================
+             8.4 BAHOLASH JURNALI (Rasm 8.4)
+             ======================================================== -->
+        <section class="page-view" id="page-grade_journal" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Guruh <i class="fa fa-caret-up"></i></th><th>Fanlar <i class="fa fa-caret-up"></i></th><th>Mashg'ulot</th><th>O'quv yili</th><th>Semestr</th>
+                </tr>
+              </thead>
+              <tbody id="gradeJournalTableBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top: 10px; color: #777; font-size: 12px;">1-8 / jami 8 ta</div>
+        </section>
+
+        <!-- ========================================================
+             FANLAR BAZASI (Rasm 3.1 - 3.6)
+             ======================================================== -->
+        <section class="page-view" id="page-subject_topics" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option>O'quv rejani tanlang</option></select>
+            <select class="filter-select"><option>O'quv yilini tanlang</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Fanlar</th><th>O'quv reja</th><th>O'quv yili</th><th>Ta'lim turi</th><th>Kafedra / Bo'lim</th><th>Mashg'ulotlar</th></tr>
+              </thead>
+              <tbody id="subjectTopicsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-subject_resources" style="display: none;">
+          <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn-hemis-primary" type="button">Resurslar katalogi <i class="fa fa-chevron-right"></i></button>
+                <button class="btn-hemis-success" type="button"><i class="fa fa-plus"></i> Yaratish</button>
+              </div>
+              <div class="table-responsive">
+                <table class="hemis-table">
+                  <thead>
+                    <tr><th>#</th><th>Sarlavha</th><th>Fanlar ro'yxati</th><th style="text-align: center;">Files</th><th>Yaratilgan <i class="fa fa-caret-down"></i></th><th style="text-align: center;">Faol</th></tr>
+                  </thead>
+                  <tbody id="subjectResourcesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div style="width: 280px; background: #fff; border: 1px solid #d2d6de; border-radius: 3px; padding: 15px;">
+              <div class="form-group-row"><label>Fakultet</label><select class="form-input-control"><option>Fakultetni tanlang</option></select></div>
+              <div class="form-group-row"><label>O'quv reja</label><select class="form-input-control"><option>O'quv rejani tanlang</option></select></div>
+              <div class="form-group-row"><label>Fanlar ro'yxati</label><select class="form-input-control"><option>Fanlar ro'yxatini tanlang</option></select></div>
+              <div class="form-group-row"><label>Mashg'ulot</label><select class="form-input-control"><option>Mashg'ulotni tanlang</option></select></div>
+              <div class="form-group-row"><label>Xodim</label><select class="form-input-control"><option>Xodimni tanlang</option></select></div>
+              <div class="form-group-row"><label>Til</label><select class="form-input-control"><option>Tilni tanlang</option></select></div>
+              <div class="form-group-row"><label>Qidirish</label><input type="text" class="form-input-control" placeholder="Resurs nomi bo'yicha qidirish"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-subject_tasks" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <select class="filter-select"><option>Fanlarni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Fanlar <i class="fa fa-caret-up"></i></th><th>O'quv reja</th><th>Guruh</th><th>Mashg'ulot</th><th>Topshiriqlar</th><th>Semestr <i class="fa fa-caret-up"></i></th><th>Ta'lim tili</th></tr>
+              </thead>
+              <tbody id="subjectTasksTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-course_tasks" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option>O'quv yilini tanlang</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <select class="filter-select"><option>Fanlarni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Fanlar</th><th>O'quv reja</th><th>Guruh</th><th>Nazorat turi</th><th>Topshiriqlar</th><th>Semestr</th><th>Ta'lim tili</th></tr>
+              </thead>
+              <tbody><tr><td colspan="8" class="empty-table-row">Xech narsa topilmadi</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-calendar_plans" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <select class="filter-select"><option>Fanlarni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Fanlar <i class="fa fa-caret-up"></i></th><th>O'quv reja</th><th>Guruh</th><th>Mashg'ulot</th><th>Semestr <i class="fa fa-caret-up"></i></th><th style="text-align: center;">Fayl nomi</th></tr>
+              </thead>
+              <tbody id="calendarPlansTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-subject_info" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option selected>2026-2027</option></select>
+            <select class="filter-select"><option>Semestrni tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <select class="filter-select"><option>Fanlarni tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Fanlar <i class="fa fa-caret-up"></i></th><th>O'quv reja</th><th>Ta'lim turi</th><th>Semestr <i class="fa fa-caret-up"></i></th></tr>
+              </thead>
+              <tbody id="subjectInfoTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             O'QUV JARAYONI -> IMTIHONLAR RO'YXATI (Rasm 4.1)
+             ======================================================== -->
+        <section class="page-view" id="page-exam_list" style="display: none;">
+          <div class="filter-bar">
+            <button class="btn-hemis-success" type="button"><i class="fa fa-plus"></i> Imtihon yaratish</button>
+            <select class="filter-select"><option>O'quv yilini tanlang</option></select>
+            <select class="filter-select"><option>Guruhni tanlang</option></select>
+            <input type="text" class="filter-input filter-search-input" placeholder="Nom bo'yicha qidirish">
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>Nomi</th><th>O'quv yili <i class="fa fa-caret-down"></i></th><th>Guruhlar</th><th style="text-align: center;">Savollar soni</th><th>Boshlanish</th><th>Tugash</th><th>Vaqti (daqiqa)</th><th style="text-align: center;">FaceID</th><th style="text-align: center;">Faol</th></tr>
+              </thead>
+              <tbody id="examListTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             O'ZLASHTIRISH -> SHAXSIY QAYDNOMA (Rasm 7.1)
+             ======================================================== -->
+        <section class="page-view" id="page-grade_records" style="display: none;">
+          <div class="filter-bar">
+            <select class="filter-select"><option>Talaba shaxsiy jadvalini tanlang</option></select>
+            <select class="filter-select"><option>Fanlar ro'yxatini tanlang</option></select>
+            <select class="filter-select"><option>Talabani tanlang</option></select>
+          </div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead>
+                <tr><th>#</th><th>Shaxsiy qaydnoma</th><th>Talaba</th><th>Ta'lim turi</th><th>Mutaxassislik</th><th>Fanlar</th><th>Semestr</th><th>Fan turi</th><th>Yuklama / Kredit</th><th>Ball</th><th>Baho</th><th>O'qituvchi F.I.SH</th><th>Muddat</th></tr>
+              </thead>
+              <tbody id="gradeRecordsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             STATISTIKA DASHBOARDI (Rasm 11.1)
+             ======================================================== -->
+        <section class="page-view" id="page-statistics" style="display: none;">
+          <div class="stat-dashboard-container">
+            <div class="stat-dashboard-header">
+              <img src="/assets/coat_of_arms.svg" alt="Gerb" class="stat-coat-img">
+              <div class="stat-header-text">
+                <h3>O'ZBEKISTON RESPUBLIKASI OLIY TA'LIM,<br>FAN VA INNOVATSIYALAR VAZIRLIGI</h3>
+              </div>
+            </div>
+            <div class="stat-tabs-row">
+              <button class="stat-tab-btn active">Talabalar</button>
+              <button class="stat-tab-btn">O'qituvchilar</button>
+              <button class="stat-tab-btn">Struktura</button>
+            </div>
+            <div class="stat-top-cards">
+              <div class="stat-banner-card bachelor">
+                <h4>Bakalavr</h4>
+                <div class="stat-numbers-row">
+                  <div class="stat-num-box"><div class="num">14245 ta</div><div class="lbl">Erkak</div></div>
+                  <div class="stat-num-box"><div class="num">3737 ta</div><div class="lbl">Ayol</div></div>
+                  <div class="stat-num-box" style="text-align: right;"><div class="num">17982 ta</div><div class="lbl">Jami</div></div>
+                </div>
+              </div>
+              <div class="stat-banner-card master">
+                <h4>Magistr</h4>
+                <div class="stat-numbers-row">
+                  <div class="stat-num-box"><div class="num">243 ta</div><div class="lbl">Erkak</div></div>
+                  <div class="stat-num-box"><div class="num">234 ta</div><div class="lbl">Ayol</div></div>
+                  <div class="stat-num-box" style="text-align: right;"><div class="num">477 ta</div><div class="lbl">Jami</div></div>
+                </div>
+              </div>
+              <div class="stat-banner-card total">
+                <h4>Jami</h4>
+                <div style="font-size: 38px; font-weight: 700; margin-top: 15px;">18459 ta</div>
+              </div>
+            </div>
+
+            <div class="stat-grid-charts">
+              <div class="chart-card-dark">
+                <div class="chart-card-title"><span>Talaba ( Yosh bo'yicha )</span></div>
+                <div style="height: 180px; display: flex; flex-direction: column; justify-content: space-around;">
+                  <div>
+                    <div style="font-size: 11px; margin-bottom: 4px;">30 yoshgacha</div>
+                    <div style="display: flex; height: 26px; border-radius: 3px; overflow: hidden;">
+                      <div style="width: 52%; background-color: #4fc3f7; display: flex; align-items: center; justify-content: center; font-size: 10px;">Erkak (240)</div>
+                      <div style="width: 45%; background-color: #ba68c8; display: flex; align-items: center; justify-content: center; font-size: 10px;">Ayol (210)</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; margin-bottom: 4px;">30 yoshdan katta</div>
+                    <div style="display: flex; height: 26px; border-radius: 3px; overflow: hidden;">
+                      <div style="width: 15%; background-color: #4fc3f7;"></div>
+                      <div style="width: 12%; background-color: #ba68c8;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-card-dark">
+                <div class="chart-card-title"><span>Talabalar ( To'lov shakli bo'yicha )</span></div>
+                <div style="display: flex; align-items: center; justify-content: center; height: 180px; position: relative;">
+                  <svg width="170" height="170" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#253556" stroke-width="12"></circle>
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#7986cb" stroke-width="12" stroke-dasharray="245 251" stroke-dashoffset="0"></circle>
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#4caf50" stroke-width="12" stroke-dasharray="8 251" stroke-dashoffset="-245"></circle>
+                  </svg>
+                  <div style="position: absolute; text-align: center;"><div style="font-size: 20px; font-weight: 700;">15595 ta</div></div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 15px; font-size: 11px;">
+                  <span><i class="fa fa-circle" style="color: #7986cb;"></i> To'lov shartnoma: 15406</span>
+                  <span><i class="fa fa-circle" style="color: #4caf50;"></i> Davlat granti: 189</span>
+                </div>
+              </div>
+
+              <div class="chart-card-dark full-width">
+                <div class="chart-card-title"><span>Talaba ( Hududlar bo'yicha )</span></div>
+                <div style="height: 220px; display: flex; align-items: flex-end; gap: 30px; padding: 10px 30px 25px 30px; border-bottom: 1px solid #23314e;">
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 32px; height: 35px; background: #7986cb; border-radius: 4px 4px 0 0;"></div><span style="font-size: 11px; color: #8da2c0;">Andijon</span></div>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 36px; height: 160px; background: #7986cb; border-radius: 4px 4px 0 0; position: relative;"><div style="width: 36px; height: 10px; background: #4caf50; position: absolute; bottom: 0;"></div></div><span style="font-size: 11px; color: #00b0ff; font-weight: 700;">Farg'ona viloyati</span></div>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 32px; height: 20px; background: #7986cb; border-radius: 4px 4px 0 0;"></div><span style="font-size: 11px; color: #8da2c0;">Namangan</span></div>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 32px; height: 10px; background: #7986cb; border-radius: 4px 4px 0 0;"></div><span style="font-size: 11px; color: #8da2c0;">Qashqadaryo</span></div>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 32px; height: 10px; background: #7986cb; border-radius: 4px 4px 0 0;"></div><span style="font-size: 11px; color: #8da2c0;">Samarqand</span></div>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="width: 32px; height: 15px; background: #7986cb; border-radius: 4px 4px 0 0;"></div><span style="font-size: 11px; color: #8da2c0;">Toshkent</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             FAYL MENEJER (Rasm 14.1)
+             ======================================================== -->
+        <section class="page-view" id="page-file_manager" style="display: none;">
+          <div class="filemanager-wrapper">
+            <div class="filemanager-toolbar">
+              <button class="fm-tool-btn" title="Orqaga"><i class="fa fa-arrow-left"></i></button>
+              <button class="fm-tool-btn" title="Oldinga"><i class="fa fa-arrow-right"></i></button>
+              <button class="fm-tool-btn" title="Yuqoriga"><i class="fa fa-level-up-alt"></i></button>
+              <span style="border-right: 1px solid #ccc; height: 18px; margin: 0 4px;"></span>
+              <button class="fm-tool-btn" title="Yangi papka"><i class="fa fa-folder-plus"></i></button>
+              <button class="fm-tool-btn" title="Fayl yuklash"><i class="fa fa-upload"></i></button>
+              <button class="fm-tool-btn" title="Yangilash"><i class="fa fa-sync-alt"></i></button>
+              <span style="border-right: 1px solid #ccc; height: 18px; margin: 0 4px;"></span>
+              <button class="fm-tool-btn" title="Ko'rish"><i class="fa fa-eye"></i></button>
+              <button class="fm-tool-btn" title="O'chirish"><i class="fa fa-trash"></i></button>
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 4px;">
+                <input type="text" placeholder="Qidirish..." style="height: 24px; padding: 2px 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+                <button class="fm-tool-btn"><i class="fa fa-search"></i></button>
+              </div>
+            </div>
+            <div class="filemanager-body">
+              <div class="filemanager-tree">
+                <div style="font-weight: 600; color: #337ab7; margin-bottom: 8px;"><i class="fa fa-folder-open"></i> gulyora_akramova</div>
+                <div id="fmTreeList" style="padding-left: 15px; font-size: 11px; color: #555;"></div>
+              </div>
+              <div class="filemanager-grid" id="fmFolderGrid"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             XABARLAR (Rasm 13.1, 13.2)
+             ======================================================== -->
+        <section class="page-view" id="page-my_messages" style="display: none;">
+          <div style="display: flex; gap: 20px;">
+            <div style="width: 220px;">
+              <button class="btn-hemis-primary" style="width: 100%; margin-bottom: 15px;" onclick="navigateTo('create_message')"><i class="fa fa-pen"></i> Xabar yaratish</button>
+              <div style="background: #fff; border: 1px solid #d2d6de; border-radius: 3px;">
+                <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: 600;">Papkalar</div>
+                <div style="padding: 10px 15px; cursor: pointer; color: #0073b7;"><i class="fa fa-inbox"></i> Kiruvchi xabarlar</div>
+                <div style="padding: 10px 15px; cursor: pointer; color: #555;"><i class="fa fa-paper-plane"></i> Jo'natilgan</div>
+                <div style="padding: 10px 15px; cursor: pointer; color: #555; display: flex; justify-content: space-between;"><span><i class="fa fa-file-alt"></i> Qoralama</span><span style="background: #777; color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px;">1</span></div>
+                <div style="padding: 10px 15px; cursor: pointer; color: #555;"><i class="fa fa-trash"></i> Korzina</div>
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <div class="hemis-card">
+                <div class="hemis-card-header"><span class="hemis-card-title">Kiruvchi xabarlar</span><input type="text" class="filter-input" placeholder="Xabarni qidirish" style="width: 250px;"></div>
+                <div style="text-align: center; padding: 40px; color: #888;">Xech narsa topilmadi</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-create_message" style="display: none;">
+          <div style="display: flex; gap: 20px;">
+            <div style="width: 220px;">
+              <button class="btn-hemis-primary" style="width: 100%; margin-bottom: 15px;" onclick="navigateTo('my_messages')"><i class="fa fa-arrow-left"></i> Kiruvchi xabarlar</button>
+            </div>
+            <div style="flex: 1;">
+              <div class="hemis-card">
+                <div class="hemis-card-header"><span class="hemis-card-title">Yangi xabar yaratish</span></div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;"><input type="text" class="form-input-control" placeholder="Kimga:" style="flex: 1;"><button class="btn-hemis-primary" type="button"><i class="fa fa-plus"></i> Xodim</button><button class="btn-hemis-primary" type="button"><i class="fa fa-plus"></i> Talaba</button></div>
+                <div style="margin-bottom: 15px;"><input type="text" class="form-input-control" placeholder="Mavzu:"></div>
+                <div style="margin-bottom: 15px;"><label style="display: block; font-weight: 600; margin-bottom: 6px;">Xabar</label><textarea class="form-input-control" style="height: 250px; resize: vertical;" placeholder="Xabar matnini kiriting..."></textarea></div>
+                <div style="display: flex; justify-content: space-between;">
+                  <div><button class="btn-hemis-primary" style="background: #e7e7e7; color: #333;" type="button"><i class="fa fa-trash"></i> O'chirish</button><button class="btn-hemis-primary" style="background: #e7e7e7; color: #333;" type="button"><i class="fa fa-save"></i> Qoralamani saqlash</button></div>
+                  <button class="btn-hemis-primary" type="button"><i class="fa fa-paper-plane"></i> Yuborish</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             FOYDALANUVCHI PROFILI (Rasm 15)
+             ======================================================== -->
+        <section class="page-view" id="page-profile" style="display: none;">
+          <div class="profile-container">
+            <div class="hemis-card">
+              <div class="hemis-card-header"><span class="hemis-card-title">Mening profilim</span></div>
+              <div class="form-group-row"><label>Login</label><input type="text" class="form-input-control" value="gulyora_akramova" readonly></div>
+              <div class="form-group-row"><label>Til</label><select class="form-input-control"><option selected>O'zbekcha</option><option>Русский</option><option>English</option></select></div>
+              <div class="form-group-row"><label>To'liq ismi *</label><input type="text" class="form-input-control" value="AKRAMOVA GULYORA ABDIXALIKOVNA" readonly></div>
+              <div class="form-group-row"><label>ID raqami</label><input type="text" class="form-input-control" value="3921612001" readonly></div>
+              <div class="form-group-row"><label>Email</label><input type="text" class="form-input-control" value="g.akramova@fstu.uz"></div>
+              <div class="form-group-row"><label>Telefon</label><input type="text" class="form-input-control" value="+998 90 123 45 67"></div>
+              <div class="form-group-row"><label><input type="checkbox"> Parolni o'zgartirish</label></div>
+              <button class="btn-hemis-primary" type="button">O'zgartirish</button>
+            </div>
+
+            <div class="hemis-card">
+              <div class="hemis-card-header"><span class="hemis-card-title">Xodim</span></div>
+              <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <img src="/assets/teacher-avatar.svg" alt="Xodim" style="width: 100px; height: 100px; border: 1px solid #ddd; border-radius: 4px;">
+                <div style="font-size: 13px; line-height: 1.8;">
+                  <div><strong>ID raqami:</strong> 3921612001</div>
+                  <div><strong>Ismi:</strong> Gulyora</div>
+                  <div><strong>Familiya:</strong> Akramova</div>
+                  <div><strong>Otasining ismi:</strong> Abdixalikovna</div>
+                  <div><strong>Tug'ilgan sana:</strong> 02-03-1988</div>
+                  <div><strong>Ilmiy unvon:</strong> Unvonsiz -</div>
+                  <div><strong>Ilmiy daraja:</strong> Darajasiz -</div>
+                </div>
+              </div>
+              <div style="margin-bottom: 15px;">
+                <h5 style="margin-bottom: 8px; font-weight: 600;">Lavozim</h5>
+                <table class="hemis-table">
+                  <thead><tr><th>#</th><th>Kafedra / Bo'lim</th><th>Stavka</th><th>Lavozim</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>Kompyuter muhandisligi va sun'iy intellekt kafedrasi</td><td>1,00 stavka</td><td>Katta o'qituvchi</td><td><span style="color: green; font-weight: 600;">Ishlamoqda</span></td></tr>
+                    <tr><td>2</td><td>Kompyuter muhandisligi va sun'iy intellekt kafedrasi</td><td>0,50 stavka</td><td>Katta o'qituvchi</td><td><span style="color: #777;">Bo'shagan</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STANDART BO'SH SAHIFALAR -->
+        <section class="page-view" id="page-generic" style="display: none;">
+          <div class="filter-bar"><select class="filter-select"><option>Tanlang</option></select></div>
+          <div class="table-responsive">
+            <table class="hemis-table">
+              <thead><tr><th>#</th><th>Ma'lumot</th><th>Holat</th></tr></thead>
+              <tbody><tr><td colspan="3" class="empty-table-row">Xech narsa topilmadi</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- PASTKI FOOTER (Versiya va Jonli Sana) -->
+  <footer class="main-footer">
+    <div>
+      <strong>Dastur versiyasi</strong> <span id="appVerText">1.9.84</span> / 
+      <strong>Yadro</strong> <span id="coreVerText">2.0.41.1</span> / 
+      <strong>UID:</strong> <span id="uidText">3921612001</span> / 
+      <strong>Sana</strong> <span id="liveClockText">05.11.2026 21:23:48</span>
+    </div>
+    <div style="font-size: 11px; color: #888;">
+      HEMIS Axborot Tizimi &copy; 2026
+    </div>
+  </footer>
+
+  <!-- FLOATING CHAT BUTTON (Rasm 1) -->
+  <button class="floating-chat-btn" id="floatingChatBtn" title="HEMIS Onlayn Maslahatchi" type="button">
+    <i class="fa fa-comment-dots"></i>
+  </button>
+
+  <!-- ========================================================
+       DAVOMATNI SAQLASH MODAL OYNASI (HEMIS Standart)
+       O'qituvchi 8.2 da qizil sana ustiga bosganda ochiladi,
+       saqlagach dars sanasi YASHIL ga aylanadi!
+       ======================================================== -->
+  <div class="modal-overlay" id="attendanceModalOverlay">
+    <div class="hemis-modal">
+      <div class="hemis-modal-header">
+        <h4 id="attendanceModalTitle">Dars o'tish va davomatni saqlash</h4>
+        <button class="hemis-modal-close" onclick="closeAttendanceModal()">&times;</button>
+      </div>
+
+      <div class="hemis-modal-body">
+        <div style="background: #f4f8fb; border: 1px solid #d2e4f0; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: #0073b7;" id="modalSubjectName">Operatsion tizimlar</div>
+            <div style="font-size: 12px; color: #555;">
+              Guruh: <strong id="modalGroupName">657-24 DIr</strong> | 
+              Sana: <strong id="modalDateName">05.11.2026</strong> | 
+              Vaqt: <strong id="modalTimeName">08:00 - 09:20</strong>
+            </div>
+          </div>
+          <div>
+            <span id="modalAttendanceStatusBadge" style="font-size: 12px; padding: 4px 10px; border-radius: 3px; font-weight: 600;"></span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-weight: 600;">Talabalar ro'yxati (<span id="modalStudentsCount">24</span> ta)</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-hemis-primary" style="height: 28px; padding: 0 10px;" onclick="markAllStudents('present')">Hammani "Bor" qilish</button>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 380px;">
+          <table class="hemis-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th style="width: 140px;">Talaba ID</th>
+                <th>Talaba F.I.Sh.</th>
+                <th style="width: 250px; text-align: center;">Davomat</th>
+              </tr>
+            </thead>
+            <tbody id="modalStudentsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hemis-modal-footer">
+        <button class="btn-hemis-primary" style="background: #999;" onclick="closeAttendanceModal()">Bekor qilish</button>
+        <button class="btn-hemis-primary" style="background: #e67e22;" onclick="toggleAttendanceStatus()" title="Sinov uchun">Holatni almashtirish (Test)</button>
+        <button class="btn-hemis-success" id="saveAttendanceBtn" onclick="submitAttendance()">
+          <i class="fa fa-save"></i> Davomatni Saqlash
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
