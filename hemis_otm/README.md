@@ -1,63 +1,115 @@
-# 🎓 HEMIS OTM Axborot Tizimi (1:1 Haqiqiy Klon)
+# 🎓 HEMIS OTM va SuperAdmin Davomat Nazorati Tizimi
 
-Ushbu platforma O'zbekiston Respublikasi Oliy Ta'lim Axborot Tizimi (**HEMIS OTM**) o'qituvchi shaxsiy kabinetining skrinshotlar asosida yaratilgan **1:1 to'liq kloni** hisoblanadi.
-
-Loyiha o'qituvchilar uchun **Telegram bot** integratsiyasi bilan to'liq moslashtirilgan bo'lib, har kuni kechki soat 20:00 da bugungi darslar davomatining saqlangan/saqlanmagan holatini tekshiradi va ertangi darslar jadvalini xabarnoma sifatida taqdim etadi.
+Universitet (OTM) o'qituvchilari tomonidan HEMIS tizimida talabalar davomatini (bor/yo'q) to'liq va o'z vaqtida belgilanishini avtomatik nazorat qiluvchi, o'qituvchilar kabineti (1:1 kloni), SuperAdmin monitoring paneli hamda Telegram ogohlantirish boti majmuasi.
 
 ---
 
-## 📸 Skrinshotlarga 1:1 Muvofiqlik
-Sayt foydalanuvchi taqdim etgan barcha 22 ta skrinshot detallarini to'liq o'zida aks ettiradi:
-1. **Top Navbar (Header):**
-   - Moviy fon (`#2a7ca5`), "HEMIS OTM" brendi
-   - 3 ta gorizontal oq chiziq (`fa-bars`) - sidebar menyuni yig'ish (collapse) va ochish
-   - Til tanlash (`O‘zbekcha`), sariq yulduzcha (`fa-star`), yangilash belgisi
-   - O'qituvchi surati va ma'lumoti: `AKRAMOVA G. A. / O'qituvchi` (bosilganda to'liq profil ochiladi)
-2. **Chap Menyu (Sidebar - Slate Dark `#222d32`):**
-   - Tepadagi `Tezkor menyu` qidiruv/select qutisi
-   - 14 ta asosiy bo'lim va barcha ichki sahifalari:
-     - 📁 `E-hujjatlar` -> Hujjatni imzolash
-     - 👥 `Xodimlar` -> Shaxsiy ish reja
-     - 📖 `Fanlar bazasi` -> Fan mavzulari, Fan resurslari, Fan topshiriqlari, Kurs topshiriqlari, Kalendar reja, Fan ma'lumotlari
-     - 🎓 `O'quv jarayoni` -> Imtihonlar ro'yxati
-     - 📋 `Yakka darslar` -> Fan talabalari, Yakka dars jadvali, Yakka dars davomat
-     - 🔄 `Qayta o'qish` -> Q.o'qish mashg'ulotlari, Oraliq, Yakuniy, Boshqa baholash, O'qituvchi talabalari
-     - ✓ `O'zlashtirish` -> Shaxsiy qaydnoma kiritish, Baholash so'rovlari
-     - 📅 `Mashg'ulotlar` -> Dars jadvali, Dars o'tish, Davomat jurnali, Baholash jurnali
-     - ⌛ `Nazoratlar` -> Oraliq, Yakuniy, Boshqa nazoratlar
-     - 🔬 `Ilmiy faoliyat` -> Uslubiy nashrlar, Ilmiy nashrlar, Intellektual mulklar, Ilmiy faollik
-     - 📊 `Statistika` -> Statistika dashboardi
-     - 📑 `Hisobotlar` -> Mening fikrim, Global so'rovnoma
-     - ✉ `Xabarlar` -> Mening xabarlarim, Xabar yaratish
-     - ⚙ `Tizim` -> Fayl menejer (elFinder interfeysi)
-   - 3 chiziq bosilganda sidebar 50px ga qisqaradi va faqat ikonalar qoladi (Rasm 22).
-3. **Pastki Footer:**
-   - `Dastur versiyasi 1.9.84 / Yadro 2.0.41.1 / UID: 543 / Sana 05.11.2026 HH:MM:SS` (jonli sekundlar bilan)
-   - O'ng pastki burchakda ko'k onlayn chat tugmasi.
+## 📌 Asosiy Xususiyatlar va Tizim Manzillari
+
+* 🎓 **O'qituvchi Kabineti (1:1 HEMIS Kloni):** [http://localhost:4000](http://localhost:4000)
+  * Dars jadvali, 8.2 Dars o'tish ro'yxati, davomat jurnali, talabalar yo'qlamasi va baholash.
+* 🛡️ **SuperAdmin Boshqaruv & Monitoring Paneli:** [http://localhost:4000/admin](http://localhost:4000/admin)
+  * Real vaqtda barcha darslar va o'qituvchilar davomat holati, Telegram orqali ogohlantirishlar nazorati.
+* 🤖 **Telegram Bot:** `@fstu_davomat_bot` (O'qituvchilarga avtomatik va shaxsiy ogohlantirish yuborish).
+* 🔒 **API Integratsiyasi Bo'limi (Himoyalangan):**
+  * Dasturchilar uchun maxsus xavfsizlik paroli: `6aa181JTI74s8r`
+  * Noto'g'ri parol kiritilganda texnik ma'sul: **Turaqulov Ilhomjon** (`+998 95 755 22 18`)
 
 ---
 
-## 🤖 Telegram Bot Integratsiyasi (20:00 Bildirishnomasi)
+## 💻 WINDOWS TIZIMIGA O'RNATISH VA ISHGA TUSHIRISH (BOSQICHMA-BOSQICH)
 
-Platforma Telegram bot uchun maxsus REST API ga ega:
-- **API Endpoint:** `GET /api/bot/daily-notification`
-- **Vazifasi:**
-  1. Bugungi kunda (05.11.2026) o'qituvchining o'tgan darslarini tekshiradi:
-     - Masalan: `Operatsion tizimlar` (657-24 DIr guruhi, 08:00 - 09:20 va 09:30 - 10:50)
-     - Davomati saqlangan bo'lsa: `✅ Saqlangan`
-     - Saqlanmagan bo'lsa: `⚠️ SAQLANMAGAN!` deb ogohlantiradi
-  2. Ertangi kungi (06.11.2026, Juma) barcha darslar ro'yxatini shakllantiradi:
-     - `11:00 - 12:20 | Ma'ruza` | Operatsion tizimlar | 657-24 DIr | Xona: 8A-117
-  3. Bot uchun tayyor HTML formatidagi xabar matnini va pastki qismdagi **"🌐 HEMIS Saytiga O'tish"** inline tugmasi URL manzilini (`http://localhost:4000`) uzatadi.
+Ushbu loyihani Windows (Windows 10, Windows 11 yoki Windows Server) tizimida o'rnatish va ishga tushirish juda oson. Quyidagi 4 ta qadamni bajaring:
+
+### 1-QADAM: Node.js ni o'rnatish
+Agar kompyuteringizda Node.js o'rnatilmagan bo'lsa:
+1. Rasmiy saytga kiring: [https://nodejs.org](https://nodejs.org)
+2. **LTS** (tavsiya etilgan, masalan `v20.x` yoki `v22.x`) versiyasini yuklab oling (`.msi` fayl).
+3. Yuklangan faylni ochib, barcha qadamlarda *"Next"* tugmasini bosib o'rnating.
+4. Tekshirish uchun Windowsda **CMD (Buyruqlar qatori)** yoki **PowerShell** ni ochib yozing:
+   ```cmd
+   node -v
+   npm -v
+   ```
+   *(Agar versiya raqami chiqsa, demak Node.js to'g'ri o'rnatilgan).*
 
 ---
 
-## 🚀 Ishga Tushirish Yo'riqnomasi
+### 2-QADAM: Loyihani yuklab olish
+Loyihani 2 xil usulda yuklab olishingiz mumkin:
 
-```bash
-cd /home/azizbek/Desktop/Projects/hemis_uchun/hemis_otm
+* **1-usul (Git orqali klonlash):**
+  ```cmd
+  git clone https://github.com/Azizbek6002/hemis_otm.git
+  cd hemis_otm
+  ```
+* **2-usul (ZIP orqali):**
+  GitHub sahifasidagi yashil **`<> Code`** tugmasini bosib, **`Download ZIP`** ni tanlang. Yuklangan arxivni istalgan papkaga chiqarib oling.
+
+---
+
+### 3-QADAM: Kerakli kutubxonalarni o'rnatish
+Windows CMD yoki PowerShell oynasida loyiha papkasiga kiring va quyidagi buyruqni bering:
+
+```cmd
 npm install
+```
+*(Bu buyruq tizim ishlashi uchun kerak bo'lgan barcha paketlarni avtomatik o'rnatadi).*
+
+---
+
+### 4-QADAM: Tizimni ishga tushirish
+
+Sizda **2 xil qulay yo'l** bor:
+
+#### A) Eng oson yo'l (1 bosishda ishga tushirish):
+Loyiha papkasidagi **`start_windows.bat`** fayli ustiga sichqonchani **2 marta bosing**.
+* Skript o'zi avtomatik serverni 4000-portda yoqadi va brauzeringizda SuperAdmin panelini ochib beradi!
+
+#### B) Buyruqlar qatori (CMD / PowerShell) orqali:
+```cmd
+npm start
+```
+yoki
+```cmd
 node server.js
 ```
 
-Brauzerda ochish: `http://localhost:4000`
+---
+
+## 🌐 Brauzerda Ishlatish
+
+Server yoqilgach, brauzeringizni ochib quyidagi manzillarga kiring:
+
+1. **SuperAdmin Monitoring Paneli:**  
+   👉 **http://localhost:4000/admin**
+2. **HEMIS OTM O'qituvchi Kabineti (1:1 klon):**  
+   👉 **http://localhost:4000**
+
+---
+
+## 🔒 Dasturchilar uchun: "4. API Integratsiyasi" Bo'limi
+
+SuperAdmin panelida (`/admin`) joylashgan **"4. API Integratsiyasi"** bo'limi xavfsizlik paroli bilan himoyalangan:
+
+1. **Parol:** `6aa181JTI74s8r`
+2. Parol to'g'ri kiritilganda bo'lim ochiladi va quyidagilarni o'zgartirish imkoniyati beriladi:
+   * **HEMIS API URL:** masalan, `https://hemis.fstu.uz/rest/v1`
+   * **HEMIS API Token:** Universitet beradigan Bearer token
+   * **"Ulanishni Tekshirish"** tugmasi orqali universitet serveri bilan aloqani darhol sinab ko'rish mumkin.
+3. Agar parol noto'g'ri kiritilsa, texnik ma'sul kontaktlari chiqadi:
+   * **Texnik ma'sul:** Turaqulov Ilhomjon
+   * **Telefon:** `+998 95 755 22 18`
+
+---
+
+## 🤖 Telegram Botni Sozlash (@fstu_davomat_bot)
+
+* Bot manzili: **[@fstu_davomat_bot](https://t.me/fstu_davomat_bot)**
+* O'qituvchilar botga kirib **/start** buyrug'ini berishadi va o'zlarining HEMIS ID sini yuborishadi.
+
+---
+
+## 👨‍💻 Texnik Yordam
+* **SuperAdmin:** Abdunazarov Azizbek Soxibjonovich
+* **Texnik Ma'sul:** Turaqulov Ilhomjon | 📞 +998 95 755 22 18
